@@ -1,0 +1,25 @@
+*.o
+*.log
+*.out
+*.ast
+
+examples/*/chisel-out/
+examples/*/log
+examples/loop/loop
+examples/conditional/conditional
+examples/basic/basic
+examples/loop/loop.c
+examples/conditional/conditional.c
+examples/basic/basic.c
+examples/loop/loop.c.chisel.c
+examples/conditional/conditional.c.chisel.c
+examples/basic/basic.c.chisel.c
+
+build/
+*.csv
+
+# vim swap files
+.*.sw?
+
+# Mac OSX speficif files
+.DS_store
