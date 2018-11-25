@@ -1,4 +1,3 @@
-#include <clang-c/Index.h>
 #include <string.h>
 
 #include <algorithm>
@@ -8,9 +7,8 @@
 #include <iterator>
 #include <string>
 
-#include "cursor_utils.h"
-#include "stats.h"
-
+#include "Stats.h"
+/*
 int Stats::getTokenCount(const char *srcPath) {
   CXIndex indx = clang_createIndex(false, false);
   CXTranslationUnit tu = clang_parseTranslationUnit(
@@ -22,7 +20,7 @@ int Stats::getTokenCount(const char *srcPath) {
   clang_tokenize(tu, extent, nullptr, &numTokens);
   return numTokens;
 }
-
+*/
 int Stats::getWordCount(const char *srcPath) {
   std::ifstream ifs(srcPath);
   std::string word;
@@ -32,7 +30,7 @@ int Stats::getWordCount(const char *srcPath) {
   }
   return count;
 }
-
+/*
 int stmt = 0;
 int funcs = 0;
 std::vector<CXCursor> stmts;
@@ -114,3 +112,4 @@ std::vector<int> Stats::getStatementCount(const char *srcPath) {
   clang_disposeIndex(indx);
   return {stmt, funcs};
 }
+*/
