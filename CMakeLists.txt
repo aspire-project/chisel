@@ -35,3 +35,6 @@ add_executable(chisel
 )
 
 target_link_libraries(chisel ${CLANG_LIBS} ${LLVM_LIBS_CORE} ${LLVM_LDFLAGS})
+
+enable_testing()
+add_subdirectory(test)
