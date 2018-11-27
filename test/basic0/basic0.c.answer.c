@@ -1,8 +1,8 @@
+int f1() { return 0; }
                       
                       
                       
                       
                       
                       
-                      
-int main() {              }
+int main() { return f1(); }

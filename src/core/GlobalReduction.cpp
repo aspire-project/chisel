@@ -112,10 +112,10 @@ bool GlobalElementCollectionVisitor::VisitDeclRefExpr(clang::DeclRefExpr *DRE) {
   if (clang::FunctionDecl *FD =
           llvm::dyn_cast<clang::FunctionDecl>(DRE->getDecl())) {
     if (FD->isThisDeclarationADefinition()) {
-      findAndInsert(FD, DRE);
+      Consumer->UseInfo[FD].emplace_back(DRE);
+    } else {
+      Consumer->UseInfo[DRE->getDecl()].emplace_back(DRE);
     }
-  } else {
-    findAndInsert(DRE->getDecl(), DRE);
   }
   return true;
 }

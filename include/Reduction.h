@@ -34,16 +34,19 @@ protected:
                                             char Symbol);
   clang::SourceLocation getEndLocationFromBegin(clang::SourceRange Range);
   int getOffsetUntil(const char *Buf, char Symbol);
+  clang::SourceLocation getDeclGroupRefEndLoc(clang::DeclGroupRef DGR);
+  clang::SourceLocation getDeclStmtEndLoc(clang::DeclStmt *DS);
   std::string getSourceText(clang::SourceRange SR);
+
+  DDElementSet toSet(DDElementVector &Vec);
+  DDElementSet setDifference(DDElementSet &A, DDElementSet &B);
 
   clang::ASTContext *Context;
   clang::Rewriter TheRewriter;
 
 private:
-  DDElementSet toSet(DDElementVector &Vec);
   DDElementVector toVector(DDElementSet &Set);
   std::vector<DDElementVector> split(DDElementVector &Vec, int n);
-  DDElementSet setDifference(DDElementSet &A, DDElementSet &B);
 };
 
 #endif // REDUCTION_H

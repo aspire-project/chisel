@@ -36,11 +36,12 @@ void Report::print() {
                  << " s\n";
   }
   if (!OptionManager::SkipGlobal) {
-    int Ratio = Prof->getSuccessfulGlobalReductionCounter() * 100 /
-                Prof->getGlobalReductionCounter();
+    int Ratio = Prof->getGlobalReductionCounter()
+                    ? Prof->getSuccessfulGlobalReductionCounter() * 100 /
+                          Prof->getGlobalReductionCounter()
+                    : 0;
     llvm::outs() << llvm::right_justify("Global Success Ratio :", LeftColWidth)
-                 << llvm::format("%5d%%", Ratio)
-                 << "  "
+                 << llvm::format("%5d%%", Ratio) << "  "
                  << llvm::format("(%5d",
                                  Prof->getSuccessfulGlobalReductionCounter())
                  << " / "
@@ -48,11 +49,12 @@ void Report::print() {
                  << "\n";
   }
   if (!OptionManager::SkipLocal) {
-    int Ratio = Prof->getSuccessfulLocalReductionCounter() * 100 /
-                Prof->getLocalReductionCounter();
+    int Ratio = Prof->getLocalReductionCounter()
+                    ? Prof->getSuccessfulLocalReductionCounter() * 100 /
+                          Prof->getLocalReductionCounter()
+                    : 0;
     llvm::outs() << llvm::right_justify("Local Success Ratio :", LeftColWidth)
-                 << llvm::format("%5d%%", Ratio)
-                 << "  "
+                 << llvm::format("%5d%%", Ratio) << "  "
                  << llvm::format("(%5d",
                                  Prof->getSuccessfulLocalReductionCounter())
                  << " / "

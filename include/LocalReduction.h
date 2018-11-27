@@ -34,14 +34,22 @@ private:
   void reduceWhile(clang::WhileStmt *WS);
   void reduceCompound(clang::CompoundStmt *CS);
   void reduceLabel(clang::LabelStmt *LS);
+  DDElementVector getAllChildren(clang::Stmt *S);
+  int countReturnStmts(DDElementVector &Elements);
+  bool noReturn(DDElementVector &FunctionStmts,
+                DDElementVector &AllRemovedStmts);
+  bool danglingLabel(DDElementVector &FunctionStmts,
+                     DDElementVector &AllRemovedStmts);
+  bool brokenDependency(DDElementVector &Chunk);
 
-  std::vector<clang::Stmt *> getImmediateChildren(clang::Stmt *S);
   std::vector<clang::Stmt *> getBodyStatements(clang::CompoundStmt *CS);
 
-  std::vector<clang::Stmt *> FunctionBodies;
+  std::vector<clang::Decl *> Functions;
   std::queue<clang::Stmt *> Queue;
+  std::map<clang::Decl *, std::vector<clang::DeclRefExpr *>> UseInfo;
 
   LocalElementCollectionVisitor *CollectionVisitor;
+  clang::FunctionDecl *CurrentFunction;
 };
 
 class LocalElementCollectionVisitor
@@ -50,6 +58,7 @@ public:
   LocalElementCollectionVisitor(LocalReduction *R) : Consumer(R) {}
 
   bool VisitFunctionDecl(clang::FunctionDecl *FD);
+  bool VisitDeclRefExpr(clang::DeclRefExpr *DRE);
 
 private:
   LocalReduction *Consumer;

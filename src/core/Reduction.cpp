@@ -30,6 +30,28 @@ bool Reduction::callOracle() {
 }
 
 clang::SourceLocation
+Reduction::getDeclGroupRefEndLoc(clang::DeclGroupRef DGR) {
+  clang::Decl *LastD;
+
+  if (DGR.isSingleDecl()) {
+    LastD = DGR.getSingleDecl();
+  } else {
+    clang::DeclGroupRef::iterator E = DGR.end();
+    --E;
+    LastD = (*E);
+  }
+
+  clang::SourceRange Range = LastD->getSourceRange();
+  clang::SourceLocation EndLoc = getEndLocationFromBegin(Range);
+  return EndLoc;
+}
+
+clang::SourceLocation Reduction::getDeclStmtEndLoc(clang::DeclStmt *DS) {
+  clang::DeclGroupRef DGR = DS->getDeclGroup();
+  return getDeclGroupRefEndLoc(DGR);
+}
+
+clang::SourceLocation
 Reduction::getEndLocationFromBegin(clang::SourceRange Range) {
   clang::SourceLocation StartLoc = Range.getBegin();
   clang::SourceLocation EndLoc = Range.getEnd();
@@ -131,7 +153,6 @@ void Reduction::doDeltaDebugging(DDElementVector &Decls) {
     bool ComplementSucceeding = false;
 
     auto RefinedChunks = refineChunks(Chunks);
-
     for (auto Chunk : RefinedChunks) {
       if (test(Chunk)) {
         auto TargetSet = toSet(Target);
