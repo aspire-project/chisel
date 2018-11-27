@@ -48,39 +48,38 @@ bool GlobalReduction::callOracle() {
 
 bool GlobalReduction::test(std::vector<DDElement> &ToBeRemoved) {
   const clang::SourceManager *SM = &Context->getSourceManager();
+  std::vector<clang::SourceRange> Ranges;
+  std::vector<std::string> Reverts;
 
-  clang::SourceLocation TotalStart, TotalEnd;
-  TotalStart =
-      ToBeRemoved.front().get<clang::Decl *>()->getSourceRange().getBegin();
-  // why not just pick the last element?
   for (auto const &D : ToBeRemoved) {
-    clang::SourceLocation start =
+    clang::SourceLocation Start =
         D.get<clang::Decl *>()->getSourceRange().getBegin();
-    clang::SourceLocation end;
+    clang::SourceLocation End;
 
     clang::FunctionDecl *FD =
         llvm::dyn_cast<clang::FunctionDecl>(D.get<clang::Decl *>());
     if (FD && FD->isThisDeclarationADefinition()) {
-      end = FD->getSourceRange().getEnd().getLocWithOffset(1);
+      End = FD->getSourceRange().getEnd().getLocWithOffset(1);
     } else {
-      end = getEndLocationUntil(D.get<clang::Decl *>()->getSourceRange(), ';')
+      End = getEndLocationUntil(D.get<clang::Decl *>()->getSourceRange(), ';')
                 .getLocWithOffset(1);
     }
-    TotalEnd = end;
+    clang::SourceRange Range(Start, End);
+    Ranges.emplace_back(Range);
+    std::string currRevert = getSourceText(Range);
+    Reverts.emplace_back(currRevert);
+    TheRewriter.ReplaceText(Range, StringUtils::placeholder(currRevert));
   }
 
-  clang::SourceRange Range(TotalStart, TotalEnd);
-  std::string Revert = getSourceText(Range);
-
-  TheRewriter.ReplaceText(Range, StringUtils::placeholder(Revert));
   writeToFile(OptionManager::InputFile);
 
   if (callOracle()) {
     /* remove from RefList and WhereUsed */
     return true;
   } else {
-    // revert
-    TheRewriter.ReplaceText(Range, Revert);
+    for (int i = 0; i < Reverts.size(); i++) {
+      TheRewriter.ReplaceText(Ranges[i], Reverts[i]);
+    }
     writeToFile(OptionManager::InputFile);
     return false;
   }

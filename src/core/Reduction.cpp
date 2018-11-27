@@ -68,8 +68,7 @@ clang::SourceLocation Reduction::getEndLocationAfter(clang::SourceRange Range,
     return EndLoc;
 
   const char *EndBuf = Context->getSourceManager().getCharacterData(EndLoc);
-  int Offset = getOffsetUntil(EndBuf, Symbol);
-  Offset++;
+  int Offset = getOffsetUntil(EndBuf, Symbol) + 1;
   return EndLoc.getLocWithOffset(Offset);
 }
 
@@ -91,35 +90,30 @@ std::string Reduction::getSourceText(clang::SourceRange SR) {
   return ref.str();
 }
 
-void Reduction::doDeltaDebugging(std::vector<DDElement> &decls) {
-  std::vector<DDElement> decls_;
-  decls_ = std::move(decls);
+void Reduction::doDeltaDebugging(std::vector<DDElement> &Decls) {
+  std::vector<DDElement> Target = std::move(Decls);
   int n = 2;
-  while (decls_.size() >= 1) {
-    // std::vector<std::vector<DDElement>>
-    auto subsets = VectorUtils::split<DDElement>(decls_, n);
-    bool complementSucceeding = false;
+  while (Target.size() >= 1) {
+    auto subsets = VectorUtils::split<DDElement>(Target, n);
+    bool ComplementSucceeding = false;
 
     auto refinedSubsets = refineSubsets(subsets);
 
     for (auto subset : refinedSubsets) {
-      std::vector<DDElement> complement =
-          VectorUtils::difference<DDElement>(decls_, subset);
       bool status = test(subset);
       if (status) {
-        decls_ = std::move(complement);
+        Target = std::move(VectorUtils::difference<DDElement>(Target, subset));
         n = std::max(n - 1, 2);
-        complementSucceeding = true;
+        ComplementSucceeding = true;
         break;
       }
     }
 
-    if (!complementSucceeding) {
-      if (n == decls_.size()) {
+    if (!ComplementSucceeding) {
+      if (n == Target.size()) {
         break;
       }
-
-      n = std::min(n * 2, static_cast<int>(decls_.size()));
+      n = std::min(n * 2, static_cast<int>(Target.size()));
     }
   }
 }

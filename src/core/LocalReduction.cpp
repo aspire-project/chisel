@@ -70,61 +70,68 @@ bool LocalReduction::callOracle() {
 
 bool LocalReduction::test(std::vector<DDElement> &toBeRemoved) {
   const clang::SourceManager *SM = &Context->getSourceManager();
-  SourceLocation TotalStart, TotalEnd;
-  TotalStart = toBeRemoved.front().get<Stmt *>()->getSourceRange().getBegin();
-  Stmt *Last = toBeRemoved.back().get<Stmt *>();
+  std::vector<clang::SourceRange> Ranges;
+  std::vector<std::string> Reverts;
 
-  if (CompoundStmt *CS = llvm::dyn_cast<CompoundStmt>(Last)) {
-    TotalEnd = CS->getRBracLoc().getLocWithOffset(1);
-  } else if (IfStmt *IS = llvm::dyn_cast<IfStmt>(Last)) {
-    TotalEnd = Last->getSourceRange().getEnd().getLocWithOffset(1);
-  } else if (WhileStmt *WS = llvm::dyn_cast<WhileStmt>(Last)) {
-    TotalEnd = Last->getSourceRange().getEnd().getLocWithOffset(1);
-  } else if (LabelStmt *LS = llvm::dyn_cast<LabelStmt>(Last)) {
-    auto subStmt = LS->getSubStmt();
-    if (CompoundStmt *LS_CS = llvm::dyn_cast<CompoundStmt>(subStmt)) {
-      TotalEnd = LS_CS->getRBracLoc().getLocWithOffset(1);
+  for (auto stmt : toBeRemoved) {
+    clang::SourceLocation start =
+        stmt.get<Stmt *>()->getSourceRange().getBegin();
+    clang::SourceLocation end;
+
+    clang::Stmt *s = stmt.get<Stmt *>();
+
+    if (CompoundStmt *CS = llvm::dyn_cast<CompoundStmt>(s)) {
+      end = CS->getRBracLoc().getLocWithOffset(1);
+    } else if (IfStmt *IS = llvm::dyn_cast<IfStmt>(s)) {
+      end = IS->getSourceRange().getEnd().getLocWithOffset(1);
+    } else if (WhileStmt *WS = llvm::dyn_cast<WhileStmt>(s)) {
+      end = WS->getSourceRange().getEnd().getLocWithOffset(1);
+    } else if (LabelStmt *LS = llvm::dyn_cast<LabelStmt>(s)) {
+      auto subStmt = LS->getSubStmt();
+      if (CompoundStmt *LS_CS = llvm::dyn_cast<CompoundStmt>(subStmt)) {
+        end = LS_CS->getRBracLoc().getLocWithOffset(1);
+      } else {
+        end = getEndLocationUntil(subStmt->getSourceRange(), ';');
+      }
+    } else if (BinaryOperator *BO = llvm::dyn_cast<BinaryOperator>(s)) {
+      end = getEndLocationAfter(BO->getSourceRange(), ';');
+    } else if (ReturnStmt *RS = llvm::dyn_cast<ReturnStmt>(s)) {
+      end = getEndLocationAfter(RS->getSourceRange(), ';');
+    } else if (GotoStmt *GS = llvm::dyn_cast<GotoStmt>(s)) {
+      end = getEndLocationUntil(GS->getSourceRange(), ';').getLocWithOffset(1);
+    } else if (BreakStmt *BS = llvm::dyn_cast<BreakStmt>(s)) {
+      end = getEndLocationUntil(BS->getSourceRange(), ';').getLocWithOffset(1);
+    } else if (ContinueStmt *CS = llvm::dyn_cast<ContinueStmt>(s)) {
+      end = getEndLocationUntil(CS->getSourceRange(), ';').getLocWithOffset(1);
+    } else if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(s)) {
+      end = getEndLocationUntil(DS->getSourceRange(), ';')
+                .getLocWithOffset(1); // getDeclStmtEndLoc(DS);
+    } else if (CallExpr *CE = llvm::dyn_cast<CallExpr>(s)) {
+      end = getEndLocationUntil(CE->getSourceRange(), ';').getLocWithOffset(1);
+    } else if (UnaryOperator *UO = llvm::dyn_cast<UnaryOperator>(s)) {
+      end = getEndLocationUntil(UO->getSourceRange(), ';').getLocWithOffset(1);
     } else {
-      TotalEnd = getEndLocationUntil(subStmt->getSourceRange(), ';')
-                     .getLocWithOffset(1);
+      return false;
     }
-  } else if (BinaryOperator *BO = llvm::dyn_cast<BinaryOperator>(Last)) {
-    TotalEnd = getEndLocationAfter(Last->getSourceRange(), ';');
-  } else if (ReturnStmt *RS = llvm::dyn_cast<ReturnStmt>(Last)) {
-    TotalEnd = getEndLocationAfter(RS->getSourceRange(), ';');
-  } else if (GotoStmt *GS = llvm::dyn_cast<GotoStmt>(Last)) {
-    TotalEnd =
-        getEndLocationUntil(Last->getSourceRange(), ';').getLocWithOffset(1);
-  } else if (BreakStmt *BS = llvm::dyn_cast<BreakStmt>(Last)) {
-    TotalEnd =
-        getEndLocationUntil(Last->getSourceRange(), ';').getLocWithOffset(1);
-  } else if (ContinueStmt *CS = llvm::dyn_cast<ContinueStmt>(Last)) {
-    TotalEnd =
-        getEndLocationUntil(Last->getSourceRange(), ';').getLocWithOffset(1);
-  } else if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(Last)) {
-    TotalEnd = getEndLocationAfter(Last->getSourceRange(), ';');
-  } else if (CallExpr *CE = llvm::dyn_cast<CallExpr>(Last)) {
-    TotalEnd =
-        getEndLocationUntil(Last->getSourceRange(), ';').getLocWithOffset(1);
-  } else if (UnaryOperator *UO = llvm::dyn_cast<UnaryOperator>(Last)) {
-    TotalEnd =
-        getEndLocationUntil(Last->getSourceRange(), ';').getLocWithOffset(1);
-  } else {
-    return false;
+
+    if (end.isInvalid() || start.isInvalid())
+      return false;
+
+    SourceRange Range(start, end);
+    Ranges.emplace_back(Range);
+    std::string Revert = getSourceText(Range);
+    Reverts.emplace_back(Revert);
+    TheRewriter.ReplaceText(Range, StringUtils::placeholder(Revert));
   }
 
-  if (TotalEnd.isInvalid() || TotalStart.isInvalid())
-    return false;
-
-  SourceRange Range(TotalStart, TotalEnd);
-  std::string Revert = getSourceText(Range);
-  TheRewriter.ReplaceText(Range, StringUtils::placeholder(Revert));
   writeToFile(OptionManager::InputFile);
 
   if (callOracle()) {
     return true;
   } else {
-    TheRewriter.ReplaceText(Range, Revert);
+    for (int i = 0; i < Reverts.size(); i++) {
+      TheRewriter.ReplaceText(Ranges[i], Reverts[i]);
+    }
     writeToFile(OptionManager::InputFile);
     return false;
   }
@@ -157,15 +164,6 @@ void LocalReduction::doHierarchicalDeltaDebugging(Stmt *S) {
   }
 }
 
-// kihong: is this necessary?
-std::vector<Stmt *> LocalReduction::getImmediateChildren(Stmt *S) {
-  std::vector<Stmt *> children;
-  for (auto S : S->children()) {
-    children.emplace_back(S);
-  }
-  return children;
-}
-
 std::vector<Stmt *> LocalReduction::getBodyStatements(CompoundStmt *CS) {
   std::vector<Stmt *> stmts;
   for (auto S : CS->body()) {
@@ -188,8 +186,7 @@ void LocalReduction::reduceIf(IfStmt *IS) {
   Stmt *ElseAsCompoundStmt;
   if (Else) {
     elseLoc = IS->getElseLoc();
-    // kihong: ??
-    ElseAsCompoundStmt = getImmediateChildren(IS).back();
+    ElseAsCompoundStmt = *(IS->child_end());
     if (elseLoc.isInvalid())
       return;
   }
