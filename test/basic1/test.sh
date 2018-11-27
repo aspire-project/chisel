@@ -1,5 +1,6 @@
 #!/bin/bash
-NAME=basic
+
+NAME=basic1
 SRC=$NAME.c
 BIN=$NAME
 
