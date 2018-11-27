@@ -37,7 +37,6 @@ void initialize() {
 
   FileManager::Initialize();
   Profiler::Initialize();
-
 }
 
 void finalize() {

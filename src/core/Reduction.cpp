@@ -100,8 +100,7 @@ void Reduction::doDeltaDebugging(std::vector<DDElement> &Decls) {
     auto refinedSubsets = refineSubsets(subsets);
 
     for (auto subset : refinedSubsets) {
-      bool status = test(subset);
-      if (status) {
+      if (test(subset)) {
         Target = std::move(VectorUtils::difference<DDElement>(Target, subset));
         n = std::max(n - 1, 2);
         ComplementSucceeding = true;
