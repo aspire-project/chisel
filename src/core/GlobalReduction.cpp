@@ -74,7 +74,6 @@ bool GlobalReduction::test(std::vector<DDElement> &ToBeRemoved) {
   writeToFile(OptionManager::InputFile);
 
   if (callOracle()) {
-    /* remove from RefList and WhereUsed */
     return true;
   } else {
     for (int i = 0; i < Reverts.size(); i++) {
@@ -89,44 +88,34 @@ std::vector<DDElementVector>
 GlobalReduction::refineChunks(std::vector<DDElementVector> &Chunks) {
   std::vector<DDElementVector> result;
   for (auto const &Chunk : Chunks) {
-    bool flag = true;
-    for (auto const &i : Chunk) {
-      auto key = i.get<clang::Decl *>();
-      if (RefList[key].size() != 0) {
-        flag = false;
-        break;
-      }
-    }
-    if (flag)
+    if (std::all_of(std::begin(Chunk), std::end(Chunk), [&](DDElement i) {
+          return UseInfo[i.get<clang::Decl *>()].size() == 0;
+        }))
       result.emplace_back(Chunk);
   }
   return result;
+}
+
+void GlobalElementCollectionVisitor::findAndInsert(clang::Decl *D,
+                                                   clang::DeclRefExpr *DRE) {
+  if (Consumer->UseInfo.find(D) != Consumer->UseInfo.end()) {
+    std::vector<clang::DeclRefExpr *> &Uses = Consumer->UseInfo[D];
+    Uses.emplace_back(DRE);
+  } else {
+    std::vector<clang::DeclRefExpr *> Uses;
+    Uses.emplace_back(DRE);
+    Consumer->UseInfo.insert(std::make_pair(D, Uses));
+  }
 }
 
 bool GlobalElementCollectionVisitor::VisitDeclRefExpr(clang::DeclRefExpr *DRE) {
   if (clang::FunctionDecl *FD =
           llvm::dyn_cast<clang::FunctionDecl>(DRE->getDecl())) {
     if (FD->isThisDeclarationADefinition()) {
-      if (Consumer->RefList.find(FD) != Consumer->RefList.end()) { // found
-        std::vector<clang::DeclRefExpr *> &v_ref = Consumer->RefList[FD];
-        v_ref.emplace_back(DRE);
-      } else { // not found
-        std::vector<clang::DeclRefExpr *> v;
-        v.emplace_back(DRE);
-        Consumer->RefList.insert(std::make_pair(FD, v));
-      }
+      findAndInsert(FD, DRE);
     }
-  } else if (clang::VarDecl *VD =
-                 llvm::dyn_cast<clang::VarDecl>(DRE->getDecl())) {
-    Consumer->WhereUsed.insert(std::make_pair(DRE, VD));
-    if (Consumer->RefList.find(VD) != Consumer->RefList.end()) { // found
-      std::vector<clang::DeclRefExpr *> &v_ref = Consumer->RefList[VD];
-      v_ref.emplace_back(DRE);
-    } else { // not found
-      std::vector<clang::DeclRefExpr *> v;
-      v.emplace_back(DRE);
-      Consumer->RefList.insert(std::make_pair(VD, v));
-    }
+  } else {
+    findAndInsert(DRE->getDecl(), DRE);
   }
   return true;
 }
@@ -135,6 +124,7 @@ bool GlobalElementCollectionVisitor::VisitFunctionDecl(
     clang::FunctionDecl *FD) {
   spdlog::get("Logger")->debug("Visit Function Decl: {}",
                                FD->getNameInfo().getAsString());
+  // hard rule : must contain main()
   if (!FD->isMain()) {
     Consumer->Decls.emplace_back(FD);
   }

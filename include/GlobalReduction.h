@@ -29,8 +29,7 @@ private:
   refineChunks(std::vector<DDElementVector> &Chunks);
 
   std::vector<clang::Decl *> Decls;
-  std::map<clang::Decl *, std::vector<clang::DeclRefExpr *>> RefList;
-  std::map<clang::DeclRefExpr *, clang::Decl *> WhereUsed;
+  std::map<clang::Decl *, std::vector<clang::DeclRefExpr *>> UseInfo;
 
   GlobalElementCollectionVisitor *CollectionVisitor;
 };
@@ -49,6 +48,8 @@ public:
 
 private:
   GlobalReduction *Consumer;
+
+  void findAndInsert(clang::Decl *D, clang::DeclRefExpr *DRE);
 };
 
 #endif // GLOBAL_REDUCTION_H
