@@ -1,10 +1,9 @@
 #include "OptionManager.h"
 
-#include <cstring>
 #include <getopt.h>
 #include <string>
-#include <unistd.h>
 
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
 
 const std::string usage_simple("Usage: chisel [OPTIONS]... ORACLE PROGRAM");
@@ -156,17 +155,21 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
     OptionManager::OracleFile = std::string(argv[optind]);
     OptionManager::InputFile = std::string(argv[optind + 1]);
 
-    if (access(OptionManager::OracleFile.c_str(), F_OK) == -1) {
+    if (!llvm::sys::fs::exists(OptionManager::OracleFile)) {
       llvm::errs() << "The specified oracle file " << OptionManager::OracleFile
                    << " does not exist.\n";
       exit(1);
-    } else if (access(OptionManager::InputFile.c_str(), F_OK) == -1) {
+    } if (!llvm::sys::fs::can_execute(OptionManager::OracleFile)) {
+      llvm::errs() << "The specified oracle file " << OptionManager::OracleFile
+                   << " is not executable.\n";
+      exit(1);
+    } else if (!llvm::sys::fs::exists(OptionManager::InputFile)) {
       llvm::errs() << "The specified input file " << OptionManager::InputFile
                    << " does not exist.\n";
       exit(1);
     }
 
-    if (strcmp(OptionManager::OutputFile.c_str(), "") == 0) {
+    if (OptionManager::OutputFile == "") {
       OptionManager::OutputFile = OptionManager::InputFile + ".chisel.c";
     }
 
@@ -175,7 +178,7 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
   } else {
     OptionManager::InputFile = std::string(argv[optind]);
 
-    if (access(OptionManager::InputFile.c_str(), F_OK) == -1) {
+    if (!llvm::sys::fs::exists(OptionManager::InputFile)) {
       llvm::errs() << "The specified input file " << OptionManager::InputFile
                    << " does not exist."
                    << "\n";
