@@ -138,8 +138,8 @@ bool LocalReduction::test(std::vector<DDElement> &toBeRemoved) {
 }
 
 std::vector<DDElementVector>
-LocalReduction::refineSubsets(std::vector<DDElementVector> &Subsets) {
-  return Subsets;
+LocalReduction::refineChunks(std::vector<DDElementVector> &Chunks) {
+  return Chunks;
 }
 
 void LocalReduction::doHierarchicalDeltaDebugging(Stmt *S) {

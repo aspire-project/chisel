@@ -1,12 +1,13 @@
 #include "Reduction.h"
 
+#include <algorithm>
+
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Lexer.h"
 #include "llvm/Support/Program.h"
 
 #include "OptionManager.h"
 #include "Profiler.h"
-#include "VectorUtils.h"
 
 void Reduction::Initialize(clang::ASTContext &C) {
   Context = &C;
@@ -90,18 +91,53 @@ std::string Reduction::getSourceText(clang::SourceRange SR) {
   return ref.str();
 }
 
-void Reduction::doDeltaDebugging(std::vector<DDElement> &Decls) {
-  std::vector<DDElement> Target = std::move(Decls);
+std::vector<DDElementVector> Reduction::split(DDElementVector &Vec, int n) {
+  std::vector<DDElementVector> Result;
+  int Length = static_cast<int>(Vec.size()) / n;
+  int Remain = static_cast<int>(Vec.size()) % n;
+
+  int Begin = 0, End = 0;
+  for (int i = 0; i < std::min(n, static_cast<int>(Vec.size())); ++i) {
+    End += (Remain > 0) ? (Length + !!(Remain--)) : Length;
+    Result.emplace_back(
+        DDElementVector(Vec.begin() + Begin, Vec.begin() + End));
+    Begin = End;
+  }
+  return Result;
+}
+
+DDElementSet Reduction::toSet(DDElementVector &Vec) {
+  DDElementSet S(Vec.begin(), Vec.end());
+  return S;
+}
+
+DDElementSet Reduction::setDifference(DDElementSet &A, DDElementSet &B) {
+  DDElementSet Result;
+  std::set_difference(A.begin(), A.end(), B.begin(), B.end(),
+                      std::inserter(Result, Result.begin()));
+  return Result;
+}
+
+DDElementVector Reduction::toVector(DDElementSet &Set) {
+  DDElementVector Vec(Set.begin(), Set.end());
+  return Vec;
+}
+
+void Reduction::doDeltaDebugging(DDElementVector &Decls) {
+  DDElementVector Target = Decls;
   int n = 2;
   while (Target.size() >= 1) {
-    auto subsets = VectorUtils::split<DDElement>(Target, n);
+    auto Chunks = split(Target, n);
     bool ComplementSucceeding = false;
 
-    auto refinedSubsets = refineSubsets(subsets);
+    auto RefinedChunks = refineChunks(Chunks);
 
-    for (auto subset : refinedSubsets) {
-      if (test(subset)) {
-        Target = std::move(VectorUtils::difference<DDElement>(Target, subset));
+    for (auto Chunk : RefinedChunks) {
+      if (test(Chunk)) {
+        auto TargetSet = toSet(Target);
+        auto ChunkSet = toSet(Chunk);
+        auto Diff = setDifference(TargetSet, ChunkSet);
+        Target = toVector(Diff);
         n = std::max(n - 1, 2);
         ComplementSucceeding = true;
         break;

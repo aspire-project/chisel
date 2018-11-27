@@ -26,7 +26,7 @@ private:
   bool callOracle();
   bool test(std::vector<DDElement> &ToBeRemoved);
   std::vector<DDElementVector>
-  refineSubsets(std::vector<DDElementVector> &Subsets);
+  refineChunks(std::vector<DDElementVector> &Chunks);
 
   std::vector<clang::Decl *> Decls;
   std::map<clang::Decl *, std::vector<clang::DeclRefExpr *>> RefList;

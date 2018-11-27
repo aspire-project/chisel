@@ -10,6 +10,7 @@
 
 using DDElement = llvm::PointerUnion<clang::Decl *, clang::Stmt *>;
 using DDElementVector = std::vector<DDElement>;
+using DDElementSet = std::set<DDElement>;
 
 class Reduction : public clang::ASTConsumer {
 public:
@@ -24,7 +25,7 @@ protected:
   virtual bool test(std::vector<DDElement> &ToBeRemoved) = 0;
   virtual bool callOracle();
   virtual std::vector<DDElementVector>
-  refineSubsets(std::vector<DDElementVector> &Subsets) = 0;
+  refineChunks(std::vector<DDElementVector> &Chunks) = 0;
 
   void writeToFile(std::string Filename);
   clang::SourceLocation getEndLocationAfter(clang::SourceRange Range,
@@ -37,6 +38,12 @@ protected:
 
   clang::ASTContext *Context;
   clang::Rewriter TheRewriter;
+
+private:
+  DDElementSet toSet(DDElementVector &Vec);
+  DDElementVector toVector(DDElementSet &Set);
+  std::vector<DDElementVector> split(DDElementVector &Vec, int n);
+  DDElementSet setDifference(DDElementSet &A, DDElementSet &B);
 };
 
 #endif // REDUCTION_H

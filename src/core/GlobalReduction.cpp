@@ -86,11 +86,11 @@ bool GlobalReduction::test(std::vector<DDElement> &ToBeRemoved) {
 }
 
 std::vector<DDElementVector>
-GlobalReduction::refineSubsets(std::vector<DDElementVector> &Subsets) {
+GlobalReduction::refineChunks(std::vector<DDElementVector> &Chunks) {
   std::vector<DDElementVector> result;
-  for (auto const &subset : Subsets) {
+  for (auto const &Chunk : Chunks) {
     bool flag = true;
-    for (auto const &i : subset) {
+    for (auto const &i : Chunk) {
       auto key = i.get<clang::Decl *>();
       if (RefList[key].size() != 0) {
         flag = false;
@@ -98,7 +98,7 @@ GlobalReduction::refineSubsets(std::vector<DDElementVector> &Subsets) {
       }
     }
     if (flag)
-      result.emplace_back(subset);
+      result.emplace_back(Chunk);
   }
   return result;
 }
