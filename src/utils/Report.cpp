@@ -3,9 +3,10 @@
 #include "llvm/Support/Format.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "FileManager.h"
 #include "OptionManager.h"
 #include "Profiler.h"
-#include "Stats.h"
+#include "StatsManager.h"
 
 void Report::print() {
   Profiler *Prof = Profiler::GetInstance();
@@ -14,6 +15,9 @@ void Report::print() {
   int LeftColWidth = 25;
   const char *RightColFmt = "%21.1f";
   std::string Bar(TotalWidth, '=');
+  StatsManager OriginStats(FileManager::GetInstance()->getOriginFilePath());
+  StatsManager ReducedStats(FileManager::GetInstance()->getBestFilePath());
+
   llvm::outs() << Bar << "\n"
                << llvm::center_justify("Report", TotalWidth) << "\n"
                << Bar << "\n"
@@ -55,9 +59,16 @@ void Report::print() {
                  << llvm::format("%5d)", Prof->getLocalReductionCounter())
                  << "\n";
   }
-  /*  auto stmt = Stats::getStatementCount(OptionManager::inputFile.c_str());
-    std::cout << "Original Size: " << stmt[0] << " statements" << std::endl;
-    stmt = Stats::getStatementCount(OptionManager::outputFile.c_str());
-    std::cout << "Reduced Size: " << stmt[0] << " statements" << std::endl;
-  */
+  llvm::outs() << llvm::right_justify("Original #Functions :", LeftColWidth)
+               << llvm::format("%23d", OriginStats.getNumOfFunctions())
+               << "\n";
+  llvm::outs() << llvm::right_justify("Original #Statemets :", LeftColWidth)
+               << llvm::format("%23d", OriginStats.getNumOfStatements())
+               << "\n";
+  llvm::outs() << llvm::right_justify("Reduced #Functions :", LeftColWidth)
+               << llvm::format("%23d", ReducedStats.getNumOfFunctions())
+               << "\n";
+  llvm::outs() << llvm::right_justify("Reduced #Statements :", LeftColWidth)
+               << llvm::format("%23d", ReducedStats.getNumOfStatements())
+               << "\n";
 }

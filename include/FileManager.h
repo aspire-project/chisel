@@ -9,6 +9,8 @@ public:
   static void Finalize();
   static FileManager *GetInstance();
 
+  std::string &getOriginFilePath() { return Origin; }
+  std::string &getBestFilePath() { return Best; }
   std::string getTempFileName(std::string Suffix);
   void updateBest();
 

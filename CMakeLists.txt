@@ -22,6 +22,7 @@ include_directories(include)
 
 add_executable(chisel
   src/Chisel.cpp
+  src/core/Frontend.cpp
   src/core/Reduction.cpp
   src/core/GlobalReduction.cpp
   src/core/LocalReduction.cpp
@@ -30,7 +31,7 @@ add_executable(chisel
   src/utils/OptionManager.cpp
   src/utils/Report.cpp
   src/utils/Profiler.cpp
-  src/utils/Stats.cpp
+  src/utils/StatsManager.cpp
   src/utils/StringUtils.cpp
 )
 
