@@ -76,7 +76,6 @@ bool LocalReduction::callOracle() {
 }
 
 bool LocalReduction::test(std::vector<DDElement> &ToBeRemoved) {
-  const clang::SourceManager *SM = &Context->getSourceManager();
   std::vector<clang::SourceRange> Ranges;
   std::vector<std::string> Reverts;
 
@@ -237,17 +236,21 @@ void LocalReduction::doHierarchicalDeltaDebugging(Stmt *S) {
   if (S == NULL)
     return;
 
+  clang::SourceLocation Start = S->getSourceRange().getBegin();
+  const clang::SourceManager &SM = Context->getSourceManager();
+  std::string Loc = Start.printToString(SM);
+
   if (IfStmt *IS = llvm::dyn_cast<IfStmt>(S)) {
-    spdlog::get("Logger")->debug("HDD IF");
+    spdlog::get("Logger")->debug("HDD IF at " + Loc);
     reduceIf(IS);
   } else if (WhileStmt *WS = llvm::dyn_cast<WhileStmt>(S)) {
-    spdlog::get("Logger")->debug("HDD WHILE");
+    spdlog::get("Logger")->debug("HDD WHILE at " + Loc);
     reduceWhile(WS);
   } else if (CompoundStmt *CS = llvm::dyn_cast<CompoundStmt>(S)) {
-    spdlog::get("Logger")->debug("HDD Compound");
+    spdlog::get("Logger")->debug("HDD Compound at " + Loc);
     reduceCompound(CS);
   } else if (LabelStmt *LS = llvm::dyn_cast<LabelStmt>(S)) {
-    spdlog::get("Logger")->debug("HDD Label");
+    spdlog::get("Logger")->debug("HDD Label at " + Loc);
     reduceLabel(LS);
   } else {
     return;

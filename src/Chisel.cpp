@@ -46,15 +46,22 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
+  int Iteration = 0;
   while (wc < wc0) {
+    Iteration++;
+    llvm::outs() << "Iteration " << Iteration << " (Word: " << wc << ")\n";
     wc0 = wc;
     if (!OptionManager::SkipGlobal) {
+      llvm::outs() << "Start global reduction\n";
       Reduction *GR = new GlobalReduction();
       Frontend::Parse(OptionManager::InputFile, GR);
+      llvm::outs() << "\n";
     }
     if (!OptionManager::SkipLocal) {
+      llvm::outs() << "Start local reduction\n";
       Reduction *LR = new LocalReduction();
       Frontend::Parse(OptionManager::InputFile, LR);
+      llvm::outs() << "\n";
     }
     //    if (!OptionManager::skipDCE) {
     //      DCE::removeDeadcode(bestNow.c_str());
