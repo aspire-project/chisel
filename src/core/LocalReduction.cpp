@@ -97,25 +97,24 @@ bool LocalReduction::test(std::vector<DDElement> &ToBeRemoved) {
       if (CompoundStmt *LS_CS = llvm::dyn_cast<CompoundStmt>(SubStmt)) {
         End = LS_CS->getRBracLoc().getLocWithOffset(1);
       } else {
-        End = getEndLocationUntil(SubStmt->getSourceRange(), ';')
-                  .getLocWithOffset(1);
+        End = getEndLocationAfter(SubStmt->getSourceRange(), ';');
       }
     } else if (BinaryOperator *BO = llvm::dyn_cast<BinaryOperator>(S)) {
       End = getEndLocationAfter(BO->getSourceRange(), ';');
     } else if (ReturnStmt *RS = llvm::dyn_cast<ReturnStmt>(S)) {
       End = getEndLocationAfter(RS->getSourceRange(), ';');
     } else if (GotoStmt *GS = llvm::dyn_cast<GotoStmt>(S)) {
-      End = getEndLocationUntil(GS->getSourceRange(), ';').getLocWithOffset(1);
+      End = getEndLocationAfter(GS->getSourceRange(), ';')
     } else if (BreakStmt *BS = llvm::dyn_cast<BreakStmt>(S)) {
-      End = getEndLocationUntil(BS->getSourceRange(), ';').getLocWithOffset(1);
+      End = getEndLocationAfter(BS->getSourceRange(), ';')
     } else if (ContinueStmt *CS = llvm::dyn_cast<ContinueStmt>(S)) {
-      End = getEndLocationUntil(CS->getSourceRange(), ';').getLocWithOffset(1);
+      End = getEndLocationAfter(CS->getSourceRange(), ';')
     } else if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S)) {
-      End = getDeclStmtEndLoc(DS).getLocWithOffset(1);
+      End = getEndLocationAfter(DS->getSourceRange(), ';')
     } else if (CallExpr *CE = llvm::dyn_cast<CallExpr>(S)) {
-      End = getEndLocationUntil(CE->getSourceRange(), ';').getLocWithOffset(1);
+      End = getEndLocationAfter(CE->getSourceRange(), ';')
     } else if (UnaryOperator *UO = llvm::dyn_cast<UnaryOperator>(S)) {
-      End = getEndLocationUntil(UO->getSourceRange(), ';').getLocWithOffset(1);
+      End = getEndLocationAfter(UO->getSourceRange(), ';')
     } else {
       return false;
     }
