@@ -202,10 +202,12 @@ bool LocalReduction::danglingLabel(DDElementVector &FunctionStmts,
 
 bool LocalReduction::brokenDependency(DDElementVector &Chunk) {
   return !(std::all_of(std::begin(Chunk), std::end(Chunk), [&](DDElement i) {
-    if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(i.get<Stmt *>())) {
+    Stmt *S = i.get<Stmt *>();
+    if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S)) {
       return UseInfo[*(DS->decl_begin())].size() == 0;
-    } else
-      return UseInfo[i.get<clang::Decl *>()].size() == 0;
+    } else {
+      return true;
+    }
   }));
 }
 
