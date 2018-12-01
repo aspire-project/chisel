@@ -2,6 +2,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include "clang/Lex/Lexer.h"
+
 #include "FileManager.h"
 #include "OptionManager.h"
 #include "Profiler.h"
@@ -75,6 +77,25 @@ bool LocalReduction::callOracle() {
   }
 }
 
+clang::SourceLocation
+LocalReduction::getEndLocation(clang::SourceLocation Loc) {
+  const clang::SourceManager &SM = Context->getSourceManager();
+  clang::Token Tok;
+
+  clang::SourceLocation Beginning =
+      clang::Lexer::GetBeginningOfToken(Loc, SM, Context->getLangOpts());
+  clang::Lexer::getRawToken(Beginning, Tok, SM, Context->getLangOpts());
+
+  clang::SourceLocation End;
+  if (Tok.getKind() == clang::tok::semi ||
+      Tok.getKind() == clang::tok::r_brace) {
+    End = Loc.getLocWithOffset(1);
+  } else {
+    End = getEndLocationAfter(Loc, ';');
+  }
+  return End;
+}
+
 bool LocalReduction::test(std::vector<DDElement> &ToBeRemoved) {
   std::vector<clang::SourceRange> Ranges;
   std::vector<std::string> Reverts;
@@ -89,9 +110,9 @@ bool LocalReduction::test(std::vector<DDElement> &ToBeRemoved) {
     if (CompoundStmt *CS = llvm::dyn_cast<CompoundStmt>(S)) {
       End = CS->getRBracLoc().getLocWithOffset(1);
     } else if (IfStmt *IS = llvm::dyn_cast<IfStmt>(S)) {
-      End = IS->getSourceRange().getEnd().getLocWithOffset(1);
+      End = getEndLocation(IS->getSourceRange().getEnd());
     } else if (WhileStmt *WS = llvm::dyn_cast<WhileStmt>(S)) {
-      End = WS->getSourceRange().getEnd().getLocWithOffset(1);
+      End = getEndLocation(WS->getSourceRange().getEnd());
     } else if (LabelStmt *LS = llvm::dyn_cast<LabelStmt>(S)) {
       auto SubStmt = LS->getSubStmt();
       if (CompoundStmt *LS_CS = llvm::dyn_cast<CompoundStmt>(SubStmt)) {

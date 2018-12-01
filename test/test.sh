@@ -9,5 +9,5 @@ cd $CHISEL_HOME/test/$TEST_NAME
 rm -rf $TEST_NAME $TEST_NAME.c $TEST_NAME.c.chisel.c chisel-out
 cp $TEST_NAME.c.orig.c $TEST_NAME.c
 $CHISEL ./test.sh $TEST_NAME.c
-rm -f $TEST_NAME $TEST_NAME.c
+rm -rf $TEST_NAME $TEST_NAME.c chisel-out
 diff -q $TEST_NAME.c.chisel.c $TEST_NAME.c.answer.c

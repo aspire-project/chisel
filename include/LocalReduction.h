@@ -44,6 +44,8 @@ private:
 
   std::vector<clang::Stmt *> getBodyStatements(clang::CompoundStmt *CS);
 
+  clang::SourceLocation getEndLocation(clang::SourceLocation Loc);
+
   std::vector<clang::Decl *> Functions;
   std::queue<clang::Stmt *> Queue;
   std::map<clang::Decl *, std::vector<clang::DeclRefExpr *>> UseInfo;
