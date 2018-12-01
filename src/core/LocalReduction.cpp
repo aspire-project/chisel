@@ -287,30 +287,26 @@ std::vector<Stmt *> LocalReduction::getBodyStatements(CompoundStmt *CS) {
 }
 
 void LocalReduction::reduceIf(IfStmt *IS) {
-  // remove else branch
   SourceLocation BeginIf = IS->getSourceRange().getBegin();
   SourceLocation EndIf = IS->getSourceRange().getEnd().getLocWithOffset(1);
   SourceLocation EndCond =
       IS->getThen()->getSourceRange().getBegin().getLocWithOffset(-1);
   SourceLocation EndThen = IS->getThen()->getSourceRange().getEnd();
-  SourceLocation ElseLoc;
-
-  Stmt *Then = IS->getThen();
-  Stmt *Else = IS->getElse();
-  if (Else) {
-    ElseLoc = IS->getElseLoc();
-    if (ElseLoc.isInvalid())
-      return;
-  }
 
   if (BeginIf.isInvalid() || EndIf.isInvalid() || EndCond.isInvalid() ||
       EndThen.isInvalid())
     return;
 
+  Stmt *Then = IS->getThen();
+  Stmt *Else = IS->getElse();
+
   std::string RevertIf = getSourceText(SourceRange(BeginIf, EndIf));
 
-  if (Else) { // then, else
-    // remove else branch
+  if (Else) {
+    SourceLocation ElseLoc = IS->getElseLoc();
+    if (ElseLoc.isInvalid())
+      return;
+
     std::string IfAndCond = getSourceText(SourceRange(BeginIf, EndCond));
     TheRewriter.ReplaceText(SourceRange(BeginIf, EndCond),
                             StringUtils::placeholder(IfAndCond));
@@ -318,28 +314,26 @@ void LocalReduction::reduceIf(IfStmt *IS) {
     TheRewriter.ReplaceText(SourceRange(ElseLoc, EndIf),
                             StringUtils::placeholder(ElsePart));
     writeToFile(OptionManager::InputFile);
-    if (callOracle()) { // successfully remove else branch
+    if (callOracle()) {
       Queue.push(Then);
-    } else { // revert else branch removal
+    } else {
       TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
       writeToFile(OptionManager::InputFile);
-      // remove then branch
       std::string IfAndThenAndElseWord =
           getSourceText(SourceRange(BeginIf, ElseLoc.getLocWithOffset(4)));
       TheRewriter.ReplaceText(SourceRange(BeginIf, ElseLoc.getLocWithOffset(4)),
                               StringUtils::placeholder(IfAndThenAndElseWord));
       writeToFile(OptionManager::InputFile);
-      if (callOracle()) { // successfully remove then branch
+      if (callOracle()) {
         Queue.push(Else);
-      } else { // revert then branch removal
+      } else {
         TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
         writeToFile(OptionManager::InputFile);
         Queue.push(Then);
         Queue.push(Else);
       }
     }
-  } else { // then
-    // remove condition
+  } else {
     std::string IfAndCond = getSourceText(SourceRange(BeginIf, EndCond));
     TheRewriter.ReplaceText(SourceRange(BeginIf, EndCond),
                             StringUtils::placeholder(IfAndCond));
