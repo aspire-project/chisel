@@ -106,7 +106,21 @@ clang::SourceLocation Reduction::getEndLocationUntil(clang::SourceRange Range,
   return EndLoc.getLocWithOffset(Offset);
 }
 
-std::string Reduction::getSourceText(clang::SourceRange SR) {
+void Reduction::removeSourceText(const clang::SourceRange &SR) {
+  std::string Text = getSourceText(SR);
+  std::string Replacement = "";
+  for (auto const &chr : Text) {
+    if (chr == '\n')
+      Replacement += '\n';
+    else if (isprint(chr))
+      Replacement += " ";
+    else
+      Replacement += chr;
+  }
+  TheRewriter.ReplaceText(SR, Replacement);
+}
+
+std::string Reduction::getSourceText(const clang::SourceRange &SR) {
   const clang::SourceManager *SM = &Context->getSourceManager();
   llvm::StringRef ref = clang::Lexer::getSourceText(
       clang::CharSourceRange::getCharRange(SR), *SM, clang::LangOptions());

@@ -5,7 +5,6 @@
 #include "FileManager.h"
 #include "OptionManager.h"
 #include "Profiler.h"
-#include "StringUtils.h"
 
 void GlobalReduction::Initialize(clang::ASTContext &Ctx) {
   Reduction::Initialize(Ctx);
@@ -64,11 +63,11 @@ bool GlobalReduction::test(std::vector<DDElement> &ToBeRemoved) {
       End = getEndLocationUntil(D.get<clang::Decl *>()->getSourceRange(), ';')
                 .getLocWithOffset(1);
     }
-    clang::SourceRange Range(Start, End);
+    const clang::SourceRange Range(Start, End);
     Ranges.emplace_back(Range);
     std::string currRevert = getSourceText(Range);
     Reverts.emplace_back(currRevert);
-    TheRewriter.ReplaceText(Range, StringUtils::placeholder(currRevert));
+    removeSourceText(Range);
   }
 
   writeToFile(OptionManager::InputFile);

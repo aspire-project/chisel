@@ -7,7 +7,6 @@
 #include "FileManager.h"
 #include "OptionManager.h"
 #include "Profiler.h"
-#include "StringUtils.h"
 
 using BinaryOperator = clang::BinaryOperator;
 using BreakStmt = clang::BreakStmt;
@@ -147,7 +146,7 @@ bool LocalReduction::test(std::vector<DDElement> &ToBeRemoved) {
     Ranges.emplace_back(Range);
     std::string Revert = getSourceText(Range);
     Reverts.emplace_back(Revert);
-    TheRewriter.ReplaceText(Range, StringUtils::placeholder(Revert));
+    removeSourceText(SourceRange(Start, End));
   }
 
   writeToFile(OptionManager::InputFile);
@@ -307,22 +306,15 @@ void LocalReduction::reduceIf(IfStmt *IS) {
     if (ElseLoc.isInvalid())
       return;
 
-    std::string IfAndCond = getSourceText(SourceRange(BeginIf, EndCond));
-    TheRewriter.ReplaceText(SourceRange(BeginIf, EndCond),
-                            StringUtils::placeholder(IfAndCond));
-    std::string ElsePart = getSourceText(SourceRange(ElseLoc, EndIf));
-    TheRewriter.ReplaceText(SourceRange(ElseLoc, EndIf),
-                            StringUtils::placeholder(ElsePart));
+    removeSourceText(SourceRange(BeginIf, EndCond));
+    removeSourceText(SourceRange(ElseLoc, EndIf));
     writeToFile(OptionManager::InputFile);
     if (callOracle()) {
       Queue.push(Then);
     } else {
       TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
       writeToFile(OptionManager::InputFile);
-      std::string IfAndThenAndElseWord =
-          getSourceText(SourceRange(BeginIf, ElseLoc.getLocWithOffset(4)));
-      TheRewriter.ReplaceText(SourceRange(BeginIf, ElseLoc.getLocWithOffset(4)),
-                              StringUtils::placeholder(IfAndThenAndElseWord));
+      removeSourceText(SourceRange(BeginIf, ElseLoc.getLocWithOffset(4)));
       writeToFile(OptionManager::InputFile);
       if (callOracle()) {
         Queue.push(Else);
@@ -334,9 +326,7 @@ void LocalReduction::reduceIf(IfStmt *IS) {
       }
     }
   } else {
-    std::string IfAndCond = getSourceText(SourceRange(BeginIf, EndCond));
-    TheRewriter.ReplaceText(SourceRange(BeginIf, EndCond),
-                            StringUtils::placeholder(IfAndCond));
+    removeSourceText(SourceRange(BeginIf, EndCond));
     writeToFile(OptionManager::InputFile);
     if (callOracle()) {
       Queue.push(Then);
@@ -357,14 +347,11 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
 
   std::string RevertWhile = getSourceText(SourceRange(BeginWhile, EndWhile));
 
-  std::string WhileAndCond = getSourceText(SourceRange(BeginWhile, EndCond));
-  TheRewriter.ReplaceText(SourceRange(BeginWhile, EndCond),
-                          StringUtils::placeholder(WhileAndCond));
+  removeSourceText(SourceRange(BeginWhile, EndCond));
   writeToFile(OptionManager::InputFile);
   if (callOracle()) {
     Queue.push(Body);
   } else {
-    // revert
     TheRewriter.ReplaceText(SourceRange(BeginWhile, EndWhile), RevertWhile);
     writeToFile(OptionManager::InputFile);
     Queue.push(Body);

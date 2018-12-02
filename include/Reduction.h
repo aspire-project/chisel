@@ -36,7 +36,9 @@ protected:
   int getOffsetUntil(const char *Buf, char Symbol);
   clang::SourceLocation getDeclGroupRefEndLoc(clang::DeclGroupRef DGR);
   clang::SourceLocation getDeclStmtEndLoc(clang::DeclStmt *DS);
-  std::string getSourceText(clang::SourceRange SR);
+
+  void removeSourceText(const clang::SourceRange &SR);
+  std::string getSourceText(const clang::SourceRange &SR);
 
   DDElementSet toSet(DDElementVector &Vec);
   DDElementSet setDifference(DDElementSet &A, DDElementSet &B);

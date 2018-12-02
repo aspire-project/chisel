@@ -26,13 +26,11 @@ add_executable(chisel
   src/core/Reduction.cpp
   src/core/GlobalReduction.cpp
   src/core/LocalReduction.cpp
-#  src/utils/RewriteUtils.cc
   src/utils/FileManager.cpp
   src/utils/OptionManager.cpp
   src/utils/Report.cpp
   src/utils/Profiler.cpp
   src/utils/StatsManager.cpp
-  src/utils/StringUtils.cpp
 )
 
 target_link_libraries(chisel ${CLANG_LIBS} ${LLVM_LIBS_CORE} ${LLVM_LDFLAGS})
