@@ -38,11 +38,14 @@ private:
   int countReturnStmts(DDElementVector &Elements);
   bool noReturn(DDElementVector &FunctionStmts,
                 DDElementVector &AllRemovedStmts);
-  bool danglingLabel(DDElementVector &FunctionStmts,
-                     DDElementVector &AllRemovedStmts);
-  bool brokenDependency(DDElementVector &Chunk);
+  bool danglingLabel(DDElementSet &Remaining);
+  bool brokenDependency(DDElementSet &Remaining);
 
+  std::vector<clang::DeclRefExpr *> getDeclRefExprs(clang::Expr *E);
   std::vector<clang::Stmt *> getBodyStatements(clang::CompoundStmt *CS);
+  clang::SourceLocation getEndOfStmt(clang::Stmt *S);
+  void addDefUse(clang::DeclRefExpr *DRE, std::set<clang::Decl *> &DU,
+                 std::set<clang::DeclRefExpr *> Cache);
 
   clang::SourceLocation getEndLocation(clang::SourceLocation Loc);
 

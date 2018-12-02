@@ -8,7 +8,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 find_package(LLVM REQUIRED)
 find_package(Clang REQUIRED)
 
-set(CMAKE_CXX_FLAGS "${LLVM_COMPILE_FLAGS} -std=c++11 -lstdc++ -w -Os -march=native -fexceptions")
+set(CMAKE_CXX_FLAGS "${LLVM_COMPILE_FLAGS} -std=c++11 -lstdc++ -lpthread -w -Os -march=native -fexceptions")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lmlpack -larmadillo")
 
 #find_package(OpenMP)

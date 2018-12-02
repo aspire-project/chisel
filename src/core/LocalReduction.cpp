@@ -28,6 +28,8 @@ using WhileStmt = clang::WhileStmt;
 using VarDecl = clang::VarDecl;
 using Decl = clang::Decl;
 using LabelDecl = clang::LabelDecl;
+using Expr = clang::Expr;
+using DeclRefExpr = clang::DeclRefExpr;
 
 void LocalReduction::Initialize(clang::ASTContext &Ctx) {
   Reduction::Initialize(Ctx);
@@ -95,49 +97,50 @@ LocalReduction::getEndLocation(clang::SourceLocation Loc) {
   return End;
 }
 
+SourceLocation LocalReduction::getEndOfStmt(Stmt *S) {
+  if (CompoundStmt *CS = llvm::dyn_cast<CompoundStmt>(S))
+    return CS->getRBracLoc().getLocWithOffset(1);
+  if (IfStmt *IS = llvm::dyn_cast<IfStmt>(S))
+    return getEndLocation(IS->getSourceRange().getEnd());
+  if (WhileStmt *WS = llvm::dyn_cast<WhileStmt>(S))
+    return getEndOfStmt(WS->getBody());
+  if (BinaryOperator *BO = llvm::dyn_cast<BinaryOperator>(S))
+    return getEndLocationAfter(BO->getSourceRange(), ';');
+  if (ReturnStmt *RS = llvm::dyn_cast<ReturnStmt>(S))
+    return getEndLocationAfter(RS->getSourceRange(), ';');
+  if (GotoStmt *GS = llvm::dyn_cast<GotoStmt>(S))
+    return getEndLocationAfter(GS->getSourceRange(), ';');
+  if (BreakStmt *BS = llvm::dyn_cast<BreakStmt>(S))
+    return getEndLocationAfter(BS->getSourceRange(), ';');
+  if (ContinueStmt *CS = llvm::dyn_cast<ContinueStmt>(S))
+    return getEndLocationAfter(CS->getSourceRange(), ';');
+  if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S))
+    return DS->getSourceRange().getEnd().getLocWithOffset(1);
+  if (CallExpr *CE = llvm::dyn_cast<CallExpr>(S))
+    return getEndLocationAfter(CE->getSourceRange(), ';');
+  if (UnaryOperator *UO = llvm::dyn_cast<UnaryOperator>(S))
+    return getEndLocationAfter(UO->getSourceRange(), ';');
+  if (LabelStmt *LS = llvm::dyn_cast<LabelStmt>(S))
+    return getEndOfStmt(LS->getSubStmt());
+  return S->getSourceRange().getEnd().getLocWithOffset(1);
+}
+
 bool LocalReduction::test(std::vector<DDElement> &ToBeRemoved) {
   std::vector<clang::SourceRange> Ranges;
   std::vector<std::string> Reverts;
 
   for (auto Element : ToBeRemoved) {
+    if (Element.isNull())
+      continue;
+
     clang::SourceLocation Start =
         Element.get<Stmt *>()->getSourceRange().getBegin();
     clang::SourceLocation End;
-
     clang::Stmt *S = Element.get<Stmt *>();
+    if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S))
+      continue;
 
-    if (CompoundStmt *CS = llvm::dyn_cast<CompoundStmt>(S)) {
-      End = CS->getRBracLoc().getLocWithOffset(1);
-    } else if (IfStmt *IS = llvm::dyn_cast<IfStmt>(S)) {
-      End = getEndLocation(IS->getSourceRange().getEnd());
-    } else if (WhileStmt *WS = llvm::dyn_cast<WhileStmt>(S)) {
-      End = getEndLocation(WS->getSourceRange().getEnd());
-    } else if (LabelStmt *LS = llvm::dyn_cast<LabelStmt>(S)) {
-      auto SubStmt = LS->getSubStmt();
-      if (CompoundStmt *LS_CS = llvm::dyn_cast<CompoundStmt>(SubStmt)) {
-        End = LS_CS->getRBracLoc().getLocWithOffset(1);
-      } else {
-        End = getEndLocationAfter(SubStmt->getSourceRange(), ';');
-      }
-    } else if (BinaryOperator *BO = llvm::dyn_cast<BinaryOperator>(S)) {
-      End = getEndLocationAfter(BO->getSourceRange(), ';');
-    } else if (ReturnStmt *RS = llvm::dyn_cast<ReturnStmt>(S)) {
-      End = getEndLocationAfter(RS->getSourceRange(), ';');
-    } else if (GotoStmt *GS = llvm::dyn_cast<GotoStmt>(S)) {
-      End = getEndLocationAfter(GS->getSourceRange(), ';');
-    } else if (BreakStmt *BS = llvm::dyn_cast<BreakStmt>(S)) {
-      End = getEndLocationAfter(BS->getSourceRange(), ';');
-    } else if (ContinueStmt *CS = llvm::dyn_cast<ContinueStmt>(S)) {
-      End = getEndLocationAfter(CS->getSourceRange(), ';');
-    } else if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S)) {
-      End = DS->getSourceRange().getEnd().getLocWithOffset(1);
-    } else if (CallExpr *CE = llvm::dyn_cast<CallExpr>(S)) {
-      End = getEndLocationAfter(CE->getSourceRange(), ';');
-    } else if (UnaryOperator *UO = llvm::dyn_cast<UnaryOperator>(S)) {
-      End = getEndLocationAfter(UO->getSourceRange(), ';');
-    } else {
-      return false;
-    }
+    End = getEndOfStmt(S);
 
     if (End.isInvalid() || Start.isInvalid())
       return false;
@@ -148,9 +151,7 @@ bool LocalReduction::test(std::vector<DDElement> &ToBeRemoved) {
     Reverts.emplace_back(Revert);
     removeSourceText(SourceRange(Start, End));
   }
-
   writeToFile(OptionManager::InputFile);
-
   if (callOracle()) {
     return true;
   } else {
@@ -160,6 +161,7 @@ bool LocalReduction::test(std::vector<DDElement> &ToBeRemoved) {
     writeToFile(OptionManager::InputFile);
     return false;
   }
+  return false;
 }
 
 DDElementVector LocalReduction::getAllChildren(Stmt *S) {
@@ -175,6 +177,7 @@ DDElementVector LocalReduction::getAllChildren(Stmt *S) {
         ToVisit.push(Child);
     }
   }
+
   return AllChildren;
 }
 
@@ -195,11 +198,7 @@ bool LocalReduction::noReturn(DDElementVector &FunctionStmts,
   return false;
 }
 
-bool LocalReduction::danglingLabel(DDElementVector &FunctionStmts,
-                                   DDElementVector &AllRemovedStmts) {
-  auto FSet = toSet(FunctionStmts);
-  auto ASet = toSet(AllRemovedStmts);
-  auto Remaining = setDifference(FSet, ASet);
+bool LocalReduction::danglingLabel(DDElementSet &Remaining) {
   std::vector<GotoStmt *> Gotos;
   std::vector<LabelStmt *> Labels;
   for (auto S : Remaining) {
@@ -218,15 +217,77 @@ bool LocalReduction::danglingLabel(DDElementVector &FunctionStmts,
   return false;
 }
 
-bool LocalReduction::brokenDependency(DDElementVector &Chunk) {
-  return !(std::all_of(std::begin(Chunk), std::end(Chunk), [&](DDElement i) {
-    Stmt *S = i.get<Stmt *>();
-    if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S)) {
-      return UseInfo[*(DS->decl_begin())].size() == 0;
-    } else {
-      return true;
+std::vector<DeclRefExpr *> LocalReduction::getDeclRefExprs(Expr *E) {
+  std::vector<DeclRefExpr *> result;
+  DDElementVector Children = getAllChildren(E);
+  for (auto const &C : Children) {
+    if (C.isNull())
+      continue;
+    Stmt *S = C.get<Stmt *>();
+    if (DeclRefExpr *DRE = llvm::dyn_cast<DeclRefExpr>(S)) {
+      result.emplace_back(DRE);
     }
-  }));
+  }
+  return result;
+}
+
+void LocalReduction::addDefUse(DeclRefExpr *DRE, std::set<Decl *> &DU,
+                               std::set<DeclRefExpr *> Cache) {
+  if (std::find(Cache.begin(), Cache.end(), DRE) == std::end(Cache)) {
+    if (VarDecl *VD = llvm::dyn_cast<VarDecl>(DRE->getDecl())) {
+      DU.insert(DRE->getDecl());
+      Cache.insert(DRE);
+    }
+  }
+}
+
+bool LocalReduction::brokenDependency(DDElementSet &Remaining) {
+  std::set<Decl *> Defs, Uses;
+  std::set<DeclRefExpr *> VisitedDeclRefExprs;
+  for (auto const &E : Remaining) {
+    if (E.isNull() || !E.is<Stmt *>())
+      continue;
+    Stmt *S = E.get<Stmt *>();
+    if (BinaryOperator *BO = llvm::dyn_cast<BinaryOperator>(S)) {
+      if (BO->isAssignmentOp() || BO->isCompoundAssignmentOp()) {
+        for (auto C : getDeclRefExprs(BO->getLHS()))
+          addDefUse(C, Defs, VisitedDeclRefExprs);
+        for (auto C : getDeclRefExprs(BO->getRHS()))
+          addDefUse(C, Uses, VisitedDeclRefExprs);
+      } else {
+        for (auto C : getDeclRefExprs(BO->getLHS()))
+          addDefUse(C, Uses, VisitedDeclRefExprs);
+        for (auto C : getDeclRefExprs(BO->getRHS()))
+          addDefUse(C, Defs, VisitedDeclRefExprs);
+      }
+    } else if (UnaryOperator *UO = llvm::dyn_cast<UnaryOperator>(S)) {
+      switch (UO->getOpcode()) {
+      case clang::OO_PlusPlus:
+      case clang::OO_MinusMinus:
+        for (auto C : getDeclRefExprs(UO->getSubExpr())) {
+          addDefUse(C, Defs, VisitedDeclRefExprs);
+          addDefUse(C, Uses, VisitedDeclRefExprs);
+        }
+        break;
+      case clang::OO_Amp:
+        for (auto C : getDeclRefExprs(UO->getSubExpr()))
+          addDefUse(C, Defs, VisitedDeclRefExprs);
+        break;
+      default:
+        for (auto C : getDeclRefExprs(UO->getSubExpr()))
+          addDefUse(C, Uses, VisitedDeclRefExprs);
+      }
+    } else if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S)) {
+      for (auto D : DS->decls()) {
+        if (VarDecl *VD = llvm::dyn_cast<VarDecl>(D))
+          Defs.insert(D);
+      }
+    } else if (DeclRefExpr *DRE = llvm::dyn_cast<DeclRefExpr>(S)) {
+      addDefUse(DRE, Uses, VisitedDeclRefExprs);
+    }
+  }
+
+  return !(std::includes(Defs.begin(), Defs.end(), Uses.begin(), Uses.end()));
 }
 
 std::vector<DDElementVector>
@@ -240,11 +301,14 @@ LocalReduction::refineChunks(std::vector<DDElementVector> &Chunks) {
       AllRemovedStmts.insert(AllRemovedStmts.end(), Children.begin(),
                              Children.end());
     }
+    auto FSet = toSet(FunctionStmts);
+    auto ASet = toSet(AllRemovedStmts);
+    auto Remaining = setDifference(FSet, ASet);
     if (noReturn(FunctionStmts, AllRemovedStmts))
       continue;
-    if (danglingLabel(FunctionStmts, AllRemovedStmts))
+    if (danglingLabel(Remaining))
       continue;
-    if (brokenDependency(Chunk))
+    if (brokenDependency(Remaining))
       continue;
     Result.emplace_back(Chunk);
   }
@@ -254,7 +318,6 @@ LocalReduction::refineChunks(std::vector<DDElementVector> &Chunks) {
 void LocalReduction::doHierarchicalDeltaDebugging(Stmt *S) {
   if (S == NULL)
     return;
-
   clang::SourceLocation Start = S->getSourceRange().getBegin();
   const clang::SourceManager &SM = Context->getSourceManager();
   std::string Loc = Start.printToString(SM);
@@ -280,17 +343,18 @@ void LocalReduction::doHierarchicalDeltaDebugging(Stmt *S) {
 std::vector<Stmt *> LocalReduction::getBodyStatements(CompoundStmt *CS) {
   std::vector<Stmt *> Stmts;
   for (auto S : CS->body()) {
-    Stmts.emplace_back(S);
+    if (S != NULL)
+      Stmts.emplace_back(S);
   }
   return Stmts;
 }
 
 void LocalReduction::reduceIf(IfStmt *IS) {
   SourceLocation BeginIf = IS->getSourceRange().getBegin();
-  SourceLocation EndIf = getEndLocation(IS->getSourceRange().getEnd());
+  SourceLocation EndIf = getEndOfStmt(IS);
   SourceLocation EndCond =
       IS->getThen()->getSourceRange().getBegin().getLocWithOffset(-1);
-  SourceLocation EndThen = IS->getThen()->getSourceRange().getEnd();
+  SourceLocation EndThen = getEndOfStmt(IS->getThen());
 
   if (BeginIf.isInvalid() || EndIf.isInvalid() || EndCond.isInvalid() ||
       EndThen.isInvalid())
@@ -338,7 +402,7 @@ void LocalReduction::reduceIf(IfStmt *IS) {
 void LocalReduction::reduceWhile(WhileStmt *WS) {
   auto Body = WS->getBody();
   SourceLocation BeginWhile = WS->getSourceRange().getBegin();
-  SourceLocation EndWhile = getEndLocation(WS->getSourceRange().getEnd());
+  SourceLocation EndWhile = getEndOfStmt(WS);
   SourceLocation EndCond =
       Body->getSourceRange().getBegin().getLocWithOffset(-1);
 
@@ -366,17 +430,14 @@ void LocalReduction::reduceCompound(CompoundStmt *CS) {
 }
 
 void LocalReduction::reduceLabel(LabelStmt *LS) {
-  if (CompoundStmt *CS = llvm::dyn_cast<CompoundStmt>(LS->getSubStmt())) {
-    Queue.push(CS);
-  }
+  Queue.push(LS->getSubStmt());
 }
 
 bool LocalElementCollectionVisitor::VisitFunctionDecl(FunctionDecl *FD) {
   spdlog::get("Logger")->debug("Visit Function Decl: {}",
                                FD->getNameInfo().getAsString());
-  if (FD->isThisDeclarationADefinition()) {
+  if (FD->isThisDeclarationADefinition())
     Consumer->Functions.emplace_back(FD);
-  }
   return true;
 }
 
