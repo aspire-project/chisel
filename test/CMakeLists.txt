@@ -17,7 +17,19 @@ add_test(
 )
 
 add_test(
+  NAME conditional1
+  COMMAND ./test.sh conditional1
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)
+
+add_test(
   NAME loop0
   COMMAND ./test.sh loop0
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)
+
+add_test(
+  NAME loop1
+  COMMAND ./test.sh loop1
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
 )

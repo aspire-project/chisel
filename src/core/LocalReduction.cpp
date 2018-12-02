@@ -287,7 +287,7 @@ std::vector<Stmt *> LocalReduction::getBodyStatements(CompoundStmt *CS) {
 
 void LocalReduction::reduceIf(IfStmt *IS) {
   SourceLocation BeginIf = IS->getSourceRange().getBegin();
-  SourceLocation EndIf = IS->getSourceRange().getEnd().getLocWithOffset(1);
+  SourceLocation EndIf = getEndLocation(IS->getSourceRange().getEnd());
   SourceLocation EndCond =
       IS->getThen()->getSourceRange().getBegin().getLocWithOffset(-1);
   SourceLocation EndThen = IS->getThen()->getSourceRange().getEnd();
@@ -296,12 +296,9 @@ void LocalReduction::reduceIf(IfStmt *IS) {
       EndThen.isInvalid())
     return;
 
-  Stmt *Then = IS->getThen();
-  Stmt *Else = IS->getElse();
-
   std::string RevertIf = getSourceText(SourceRange(BeginIf, EndIf));
 
-  if (Else) {
+  if (IS->getElse()) {
     SourceLocation ElseLoc = IS->getElseLoc();
     if (ElseLoc.isInvalid())
       return;
@@ -310,30 +307,30 @@ void LocalReduction::reduceIf(IfStmt *IS) {
     removeSourceText(SourceRange(ElseLoc, EndIf));
     writeToFile(OptionManager::InputFile);
     if (callOracle()) {
-      Queue.push(Then);
+      Queue.push(IS->getThen());
     } else {
       TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
       writeToFile(OptionManager::InputFile);
       removeSourceText(SourceRange(BeginIf, ElseLoc.getLocWithOffset(4)));
       writeToFile(OptionManager::InputFile);
       if (callOracle()) {
-        Queue.push(Else);
+        Queue.push(IS->getElse());
       } else {
         TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
         writeToFile(OptionManager::InputFile);
-        Queue.push(Then);
-        Queue.push(Else);
+        Queue.push(IS->getThen());
+        Queue.push(IS->getElse());
       }
     }
   } else {
     removeSourceText(SourceRange(BeginIf, EndCond));
     writeToFile(OptionManager::InputFile);
     if (callOracle()) {
-      Queue.push(Then);
+      Queue.push(IS->getThen());
     } else {
       TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
       writeToFile(OptionManager::InputFile);
-      Queue.push(Then);
+      Queue.push(IS->getThen());
     }
   }
 }
@@ -341,7 +338,7 @@ void LocalReduction::reduceIf(IfStmt *IS) {
 void LocalReduction::reduceWhile(WhileStmt *WS) {
   auto Body = WS->getBody();
   SourceLocation BeginWhile = WS->getSourceRange().getBegin();
-  SourceLocation EndWhile = WS->getSourceRange().getEnd().getLocWithOffset(1);
+  SourceLocation EndWhile = getEndLocation(WS->getSourceRange().getEnd());
   SourceLocation EndCond =
       Body->getSourceRange().getBegin().getLocWithOffset(-1);
 
