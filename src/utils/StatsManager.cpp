@@ -6,16 +6,15 @@
 
 #include "Frontend.h"
 
-StatsManager::StatsManager(std::string &F) {
-  FileName = F;
-  computeStats();
-}
+int StatsManager::NumOfWords = 0;
+int StatsManager::NumOfStatements = 0;
+int StatsManager::NumOfFunctions = 0;
 
-void StatsManager::computeStats() {
+void StatsManager::ComputeStats(std::string &FileName) {
   NumOfWords = 0;
   NumOfStatements = 0;
   NumOfFunctions = 0;
-  StatsComputer *S = new StatsComputer(this);
+  StatsComputer *S = new StatsComputer();
   Frontend::Parse(FileName, S);
 
   std::ifstream IFS(FileName.c_str());
@@ -25,17 +24,17 @@ void StatsManager::computeStats() {
   }
 }
 
-void StatsManager::print() {
+void StatsManager::Print() {
   llvm::outs() << "# Functions  : " << NumOfFunctions << "\n";
   llvm::outs() << "# Statements : " << NumOfStatements << "\n";
 }
 
-void StatsManager::increaseNumOfFunctions() { NumOfFunctions++; }
+void StatsManager::IncreaseNumOfFunctions() { NumOfFunctions++; }
 
-void StatsManager::increaseNumOfStatements() { NumOfStatements++; }
+void StatsManager::IncreaseNumOfStatements() { NumOfStatements++; }
 
 void StatsComputer::Initialize(clang::ASTContext &Ctx) {
-  Visitor = new StatsVisitor(Manager);
+  Visitor = new StatsVisitor();
 }
 
 bool StatsComputer::HandleTopLevelDecl(clang::DeclGroupRef D) {
@@ -46,7 +45,7 @@ bool StatsComputer::HandleTopLevelDecl(clang::DeclGroupRef D) {
 }
 
 bool StatsVisitor::VisitFunctionDecl(clang::FunctionDecl *FD) {
-  Manager->increaseNumOfFunctions();
+  StatsManager::IncreaseNumOfFunctions();
   return true;
 }
 
@@ -54,10 +53,10 @@ bool StatsVisitor::VisitStmt(clang::Stmt *S) {
   if (clang::Expr *E = llvm::dyn_cast<clang::Expr>(S)) {
     if (clang::BinaryOperator *BO = llvm::dyn_cast<clang::BinaryOperator>(E))
       if (BO->isAssignmentOp())
-        Manager->increaseNumOfStatements();
+        StatsManager::IncreaseNumOfStatements();
   } else if (clang::CompoundStmt *C = llvm::dyn_cast<clang::CompoundStmt>(S)) {
   } else {
-    Manager->increaseNumOfStatements();
+    StatsManager::IncreaseNumOfStatements();
   }
   return true;
 }

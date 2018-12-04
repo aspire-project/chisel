@@ -10,25 +10,24 @@
 
 class StatsManager {
 public:
+  static void ComputeStats(std::string &FileName);
+  static void Print();
+
+  static int GetNumOfWords() { return NumOfWords; }
+  static int GetNumOfStatements() { return StatsManager::NumOfStatements; }
+  static int GetNumOfFunctions() { return NumOfFunctions; }
+
+  static void IncreaseNumOfFunctions();
+  static void IncreaseNumOfStatements();
+
+private:
   StatsManager() {}
   StatsManager(std::string &FileName);
   ~StatsManager() {}
 
-  void print();
-  int getNumOfWords() { return NumOfWords; }
-  int getNumOfStatements() { return NumOfStatements; }
-  int getNumOfFunctions() { return NumOfFunctions; }
-  void increaseNumOfFunctions();
-  void increaseNumOfStatements();
-
-
-private:
-  void computeStats();
-
-  std::string FileName;
-  int NumOfWords = 0;
-  int NumOfStatements = 0;
-  int NumOfFunctions = 0;
+  static int NumOfWords;
+  static int NumOfStatements;
+  static int NumOfFunctions;
 };
 
 class StatsVisitor;
@@ -37,7 +36,7 @@ class StatsComputer : public clang::ASTConsumer {
   friend class StatsVisitor;
 
 public:
-  StatsComputer(StatsManager *S) : Manager(S), Visitor(NULL) {}
+  StatsComputer() : Visitor(NULL) {}
   ~StatsComputer() { delete Visitor; }
 
 private:
@@ -50,13 +49,10 @@ private:
 
 class StatsVisitor : public clang::RecursiveASTVisitor<StatsVisitor> {
 public:
-  StatsVisitor(StatsManager *S) : Manager(S) {}
+  StatsVisitor() {}
 
   bool VisitFunctionDecl(clang::FunctionDecl *FD);
   bool VisitStmt(clang::Stmt *S);
-
-private:
-  StatsManager *Manager;
 };
 
 #endif // STATS_MANAGER_H

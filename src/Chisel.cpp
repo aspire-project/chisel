@@ -37,12 +37,12 @@ int main(int argc, char *argv[]) {
 
   Profiler::GetInstance()->beginChisel();
 
-  StatsManager Stats(OptionManager::InputFile);
+  StatsManager::ComputeStats(OptionManager::InputFile);
   int wc0 = std::numeric_limits<int>::max();
-  int wc = Stats.getNumOfWords();
+  int wc = StatsManager::GetNumOfWords();
 
   if (OptionManager::Stat) {
-    Stats.print();
+    StatsManager::Print();
     return 0;
   }
 
@@ -66,7 +66,8 @@ int main(int argc, char *argv[]) {
     //    if (!OptionManager::skipDCE) {
     //      DCE::removeDeadcode(bestNow.c_str());
     //    }
-    wc = StatsManager(OptionManager::InputFile).getNumOfWords();
+    StatsManager::ComputeStats(OptionManager::InputFile);
+    wc = StatsManager::GetNumOfWords();
   }
   //  DCE::removeVacuousElements(bestNow.c_str());
   Profiler::GetInstance()->endChisel();

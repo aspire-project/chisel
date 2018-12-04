@@ -15,8 +15,8 @@ void Report::print() {
   int LeftColWidth = 25;
   const char *RightColFmt = "%21.1f";
   std::string Bar(TotalWidth, '=');
-  StatsManager OriginStats(FileManager::GetInstance()->getOriginFilePath());
-  StatsManager ReducedStats(FileManager::GetInstance()->getBestFilePath());
+
+
 
   llvm::outs() << Bar << "\n"
                << llvm::center_justify("Report", TotalWidth) << "\n"
@@ -61,16 +61,18 @@ void Report::print() {
                  << llvm::format("%5d)", Prof->getLocalReductionCounter())
                  << "\n";
   }
+  StatsManager::ComputeStats(FileManager::GetInstance()->getOriginFilePath());
   llvm::outs() << llvm::right_justify("Original #Functions :", LeftColWidth)
-               << llvm::format("%23d", OriginStats.getNumOfFunctions())
+               << llvm::format("%23d", StatsManager::GetNumOfFunctions())
                << "\n";
   llvm::outs() << llvm::right_justify("Original #Statemets :", LeftColWidth)
-               << llvm::format("%23d", OriginStats.getNumOfStatements())
+               << llvm::format("%23d", StatsManager::GetNumOfStatements())
                << "\n";
+  StatsManager::ComputeStats(FileManager::GetInstance()->getBestFilePath());
   llvm::outs() << llvm::right_justify("Reduced #Functions :", LeftColWidth)
-               << llvm::format("%23d", ReducedStats.getNumOfFunctions())
+               << llvm::format("%23d", StatsManager::GetNumOfFunctions())
                << "\n";
   llvm::outs() << llvm::right_justify("Reduced #Statements :", LeftColWidth)
-               << llvm::format("%23d", ReducedStats.getNumOfStatements())
+               << llvm::format("%23d", StatsManager::GetNumOfStatements())
                << "\n";
 }
