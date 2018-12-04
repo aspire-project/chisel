@@ -29,18 +29,13 @@ DDElement GlobalReduction::CastElement(clang::Decl *D) { return D; }
 
 bool GlobalReduction::callOracle() {
   Profiler::GetInstance()->incrementGlobalReductionCounter();
-  std::string TempFileName =
-      FileManager::GetInstance()->getTempFileName("global");
 
   if (Reduction::callOracle()) {
-    FileManager::GetInstance()->updateBest();
     Profiler::GetInstance()->incrementSuccessfulGlobalReductionCounter();
-    if (OptionManager::SaveTemp)
-      writeToFile(TempFileName + ".success.c");
+    FileManager::GetInstance()->saveTemp("global", true);
     return true;
   } else {
-    if (OptionManager::SaveTemp)
-      writeToFile(TempFileName + ".fail.c");
+    FileManager::GetInstance()->saveTemp("global", false);
     return false;
   }
 }
@@ -54,11 +49,13 @@ bool GlobalReduction::test(std::vector<DDElement> &ToBeRemoved) {
     clang::SourceLocation Start =
         D.get<clang::Decl *>()->getSourceRange().getBegin();
     clang::SourceLocation End;
-
     clang::FunctionDecl *FD =
         llvm::dyn_cast<clang::FunctionDecl>(D.get<clang::Decl *>());
     if (FD && FD->isThisDeclarationADefinition()) {
       End = FD->getSourceRange().getEnd().getLocWithOffset(1);
+    } else if (clang::EmptyDecl *ED =
+                   llvm::dyn_cast<clang::EmptyDecl>(D.get<clang::Decl *>())) {
+      End = ED->getSourceRange().getEnd().getLocWithOffset(1);
     } else {
       End = getEndLocationUntil(D.get<clang::Decl *>()->getSourceRange(), ';')
                 .getLocWithOffset(1);
@@ -70,7 +67,7 @@ bool GlobalReduction::test(std::vector<DDElement> &ToBeRemoved) {
     removeSourceText(Range);
   }
 
-  writeToFile(OptionManager::InputFile);
+  TheRewriter.overwriteChangedFiles();
 
   if (callOracle()) {
     return true;
@@ -78,7 +75,7 @@ bool GlobalReduction::test(std::vector<DDElement> &ToBeRemoved) {
     for (int i = 0; i < Reverts.size(); i++) {
       TheRewriter.ReplaceText(Ranges[i], Reverts[i]);
     }
-    writeToFile(OptionManager::InputFile);
+    TheRewriter.overwriteChangedFiles();
     return false;
   }
 }
@@ -153,6 +150,12 @@ bool GlobalElementCollectionVisitor::VisitTypedefDecl(clang::TypedefDecl *TD) {
 
 bool GlobalElementCollectionVisitor::VisitEnumDecl(clang::EnumDecl *ED) {
   spdlog::get("Logger")->debug("Visit Enum Decl: {}", ED->getNameAsString());
+  Consumer->Decls.emplace_back(ED);
+  return true;
+}
+
+bool GlobalElementCollectionVisitor::VisitEmptyDecl(clang::EmptyDecl *ED) {
+  spdlog::get("Logger")->debug("Visit Empty Decl");
   Consumer->Decls.emplace_back(ED);
   return true;
 }

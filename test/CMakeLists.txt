@@ -11,6 +11,12 @@ add_test(
 )
 
 add_test(
+  NAME basic2
+  COMMAND ./test.sh basic2
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)
+
+add_test(
   NAME conditional0
   COMMAND ./test.sh conditional0
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"

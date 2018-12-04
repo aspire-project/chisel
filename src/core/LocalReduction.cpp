@@ -62,18 +62,13 @@ DDElement LocalReduction::CastElement(Stmt *S) { return S; }
 
 bool LocalReduction::callOracle() {
   Profiler::GetInstance()->incrementLocalReductionCounter();
-  std::string TempFileName =
-      FileManager::GetInstance()->getTempFileName("local");
 
   if (Reduction::callOracle()) {
-    FileManager::GetInstance()->updateBest();
     Profiler::GetInstance()->incrementSuccessfulLocalReductionCounter();
-    if (OptionManager::SaveTemp)
-      writeToFile(TempFileName + ".success.c");
+    FileManager::GetInstance()->saveTemp("local", true);
     return true;
   } else {
-    if (OptionManager::SaveTemp)
-      writeToFile(TempFileName + ".fail.c");
+    FileManager::GetInstance()->saveTemp("local", false);
     return false;
   }
 }
@@ -104,14 +99,14 @@ bool LocalReduction::test(std::vector<DDElement> &ToBeRemoved) {
     Reverts.emplace_back(Revert);
     removeSourceText(SourceRange(Start, End));
   }
-  writeToFile(OptionManager::InputFile);
+  TheRewriter.overwriteChangedFiles();
   if (callOracle()) {
     return true;
   } else {
     for (int i = 0; i < Reverts.size(); i++) {
       TheRewriter.ReplaceText(Ranges[i], Reverts[i]);
     }
-    writeToFile(OptionManager::InputFile);
+    TheRewriter.overwriteChangedFiles();
     return false;
   }
   return false;
@@ -322,31 +317,31 @@ void LocalReduction::reduceIf(IfStmt *IS) {
 
     removeSourceText(SourceRange(BeginIf, EndCond));
     removeSourceText(SourceRange(ElseLoc, EndIf));
-    writeToFile(OptionManager::InputFile);
+    TheRewriter.overwriteChangedFiles();
     if (callOracle()) {
       Queue.push(IS->getThen());
     } else {
       TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
-      writeToFile(OptionManager::InputFile);
+      TheRewriter.overwriteChangedFiles();
       removeSourceText(SourceRange(BeginIf, ElseLoc.getLocWithOffset(4)));
-      writeToFile(OptionManager::InputFile);
+      TheRewriter.overwriteChangedFiles();
       if (callOracle()) {
         Queue.push(IS->getElse());
       } else {
         TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
-        writeToFile(OptionManager::InputFile);
+        TheRewriter.overwriteChangedFiles();
         Queue.push(IS->getThen());
         Queue.push(IS->getElse());
       }
     }
   } else {
     removeSourceText(SourceRange(BeginIf, EndCond));
-    writeToFile(OptionManager::InputFile);
+    TheRewriter.overwriteChangedFiles();
     if (callOracle()) {
       Queue.push(IS->getThen());
     } else {
       TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
-      writeToFile(OptionManager::InputFile);
+      TheRewriter.overwriteChangedFiles();
       Queue.push(IS->getThen());
     }
   }
@@ -362,12 +357,12 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
   std::string RevertWhile = getSourceText(SourceRange(BeginWhile, EndWhile));
 
   removeSourceText(SourceRange(BeginWhile, EndCond));
-  writeToFile(OptionManager::InputFile);
+  TheRewriter.overwriteChangedFiles();
   if (callOracle()) {
     Queue.push(Body);
   } else {
     TheRewriter.ReplaceText(SourceRange(BeginWhile, EndWhile), RevertWhile);
-    writeToFile(OptionManager::InputFile);
+    TheRewriter.overwriteChangedFiles();
     Queue.push(Body);
   }
 }

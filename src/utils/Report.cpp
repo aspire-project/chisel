@@ -68,7 +68,7 @@ void Report::print() {
   llvm::outs() << llvm::right_justify("Original #Statemets :", LeftColWidth)
                << llvm::format("%23d", StatsManager::GetNumOfStatements())
                << "\n";
-  StatsManager::ComputeStats(FileManager::GetInstance()->getBestFilePath());
+  StatsManager::ComputeStats(OptionManager::InputFile);
   llvm::outs() << llvm::right_justify("Reduced #Functions :", LeftColWidth)
                << llvm::format("%23d", StatsManager::GetNumOfFunctions())
                << "\n";

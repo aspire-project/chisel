@@ -10,9 +10,8 @@ public:
   static FileManager *GetInstance();
 
   std::string &getOriginFilePath() { return Origin; }
-  std::string &getBestFilePath() { return Best; }
   std::string getTempFileName(std::string Suffix);
-  void updateBest();
+  void saveTemp(std::string Phase, bool Status);
 
 private:
   FileManager() {}
@@ -20,7 +19,6 @@ private:
 
   static FileManager *Instance;
 
-  std::string Best;
   std::string Origin;
   int TempCounter = 0;
 };

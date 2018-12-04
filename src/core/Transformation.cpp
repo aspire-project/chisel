@@ -16,6 +16,8 @@ void Transformation::writeToFile(std::string Filename) {
 }
 
 clang::SourceLocation Transformation::getEndOfStmt(clang::Stmt *S) {
+  if (clang::NullStmt *NS = llvm::dyn_cast<clang::NullStmt>(S))
+    return NS->getSemiLoc().getLocWithOffset(1);
   if (clang::CompoundStmt *CS = llvm::dyn_cast<clang::CompoundStmt>(S))
     return CS->getRBracLoc().getLocWithOffset(1);
   if (clang::IfStmt *IS = llvm::dyn_cast<clang::IfStmt>(S))
@@ -73,8 +75,8 @@ Transformation::getEndLocation(clang::SourceLocation Loc) {
   return End;
 }
 
-clang::SourceLocation Transformation::getEndLocationAfter(clang::SourceRange Range,
-                                                     char Symbol) {
+clang::SourceLocation
+Transformation::getEndLocationAfter(clang::SourceRange Range, char Symbol) {
   clang::SourceLocation EndLoc = getEndLocationFromBegin(Range);
   if (EndLoc.isInvalid())
     return EndLoc;
@@ -84,8 +86,8 @@ clang::SourceLocation Transformation::getEndLocationAfter(clang::SourceRange Ran
   return EndLoc.getLocWithOffset(Offset);
 }
 
-clang::SourceLocation Transformation::getEndLocationUntil(clang::SourceRange Range,
-                                                     char Symbol) {
+clang::SourceLocation
+Transformation::getEndLocationUntil(clang::SourceRange Range, char Symbol) {
   clang::SourceLocation EndLoc = getEndLocationFromBegin(Range);
   if (EndLoc.isInvalid())
     return EndLoc;

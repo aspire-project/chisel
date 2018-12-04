@@ -45,6 +45,7 @@ public:
   bool VisitRecordDecl(clang::RecordDecl *RD);
   bool VisitTypedefDecl(clang::TypedefDecl *TD);
   bool VisitVarDecl(clang::VarDecl *VD);
+  bool VisitEmptyDecl(clang::EmptyDecl *ED);
 
 private:
   GlobalReduction *Consumer;

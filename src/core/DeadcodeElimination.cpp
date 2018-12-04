@@ -30,8 +30,7 @@ void DeadcodeElimination::removeUnusedVariables() {
       }
     }
   }
-  writeToFile(OptionManager::InputFile);
-  FileManager::GetInstance()->updateBest();
+  TheRewriter.overwriteChangedFiles();
 }
 
 void DeadcodeElimination::HandleTranslationUnit(clang::ASTContext &Ctx) {
