@@ -3,7 +3,7 @@
 #include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/spdlog.h>
 
-//#include "dce.h"
+#include "DeadcodeElimination.h"
 #include "FileManager.h"
 #include "Frontend.h"
 #include "GlobalReduction.h"
@@ -51,6 +51,12 @@ int main(int argc, char *argv[]) {
     Iteration++;
     llvm::outs() << "Iteration " << Iteration << " (Word: " << wc << ")\n";
     wc0 = wc;
+    if (!OptionManager::SkipDCE) {
+      llvm::outs() << "Start deadcode elimination\n";
+      Reduction *DCE = new DeadcodeElimination();
+      Frontend::Parse(OptionManager::InputFile, DCE);
+      llvm::outs() << "\n";
+    }
     if (!OptionManager::SkipGlobal) {
       llvm::outs() << "Start global reduction\n";
       Reduction *GR = new GlobalReduction();
@@ -63,13 +69,9 @@ int main(int argc, char *argv[]) {
       Frontend::Parse(OptionManager::InputFile, LR);
       llvm::outs() << "\n";
     }
-    //    if (!OptionManager::skipDCE) {
-    //      DCE::removeDeadcode(bestNow.c_str());
-    //    }
     StatsManager::ComputeStats(OptionManager::InputFile);
     wc = StatsManager::GetNumOfWords();
   }
-  //  DCE::removeVacuousElements(bestNow.c_str());
   Profiler::GetInstance()->endChisel();
 
   Report::print();
