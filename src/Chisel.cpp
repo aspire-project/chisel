@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     wc0 = wc;
     if (!OptionManager::SkipDCE) {
       llvm::outs() << "Start deadcode elimination\n";
-      Reduction *DCE = new DeadcodeElimination();
+      Transformation *DCE = new DeadcodeElimination();
       Frontend::Parse(OptionManager::InputFile, DCE);
       llvm::outs() << "\n";
     }

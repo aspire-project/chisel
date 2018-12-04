@@ -10,7 +10,7 @@
 
 class DeadcodeElementCollectionVisitor;
 
-class DeadcodeElimination : public Reduction {
+class DeadcodeElimination : public Transformation {
   friend class LocalElementCollectionVisitor;
 
 public:
@@ -24,19 +24,11 @@ private:
   bool HandleTopLevelDecl(clang::DeclGroupRef D);
   void HandleTranslationUnit(clang::ASTContext &Ctx);
 
-  static DDElement CastElement(clang::Stmt *S);
-
-  bool test(DDElementVector &ToBeRemoved);
-  std::vector<DDElementVector>
-  refineChunks(std::vector<DDElementVector> &Chunks);
   std::vector<clang::DeclRefExpr *> getDeclRefExprs(clang::Expr *E);
-  clang::SourceLocation getEndOfStmt(clang::Stmt *S);
   void addDefUse(clang::DeclRefExpr *DRE, std::set<clang::Decl *> &DU,
                  std::set<clang::DeclRefExpr *> Cache);
 
   void removeUnusedVariables();
-
-  clang::SourceLocation getEndLocation(clang::SourceLocation Loc);
 
   DeadcodeElementCollectionVisitor *CollectionVisitor;
 };

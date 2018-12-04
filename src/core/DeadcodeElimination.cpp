@@ -1,43 +1,17 @@
 #include "DeadcodeElimination.h"
 
-#include <spdlog/spdlog.h>
-
 #include "clang/Lex/Lexer.h"
 
 #include "FileManager.h"
 #include "OptionManager.h"
-#include "Profiler.h"
 
-using BinaryOperator = clang::BinaryOperator;
-using BreakStmt = clang::BreakStmt;
-using CallExpr = clang::CallExpr;
-using ContinueStmt = clang::ContinueStmt;
-using CompoundStmt = clang::CompoundStmt;
-using DeclGroupRef = clang::DeclGroupRef;
-using DeclStmt = clang::DeclStmt;
-using FunctionDecl = clang::FunctionDecl;
-using GotoStmt = clang::GotoStmt;
-using IfStmt = clang::IfStmt;
-using LabelStmt = clang::LabelStmt;
-using ReturnStmt = clang::ReturnStmt;
-using SourceRange = clang::SourceRange;
-using SourceLocation = clang::SourceLocation;
-using Stmt = clang::Stmt;
-using UnaryOperator = clang::UnaryOperator;
-using WhileStmt = clang::WhileStmt;
-using VarDecl = clang::VarDecl;
-using Decl = clang::Decl;
-using LabelDecl = clang::LabelDecl;
-using Expr = clang::Expr;
-using DeclRefExpr = clang::DeclRefExpr;
-
-void DeadcodeElimination::Initialize(clang::ASTContext &Ctx) {
-  Reduction::Initialize(Ctx);
+void DeadcodeElimination::Initialize(clang::ASTContext &Ctx){
+  Transformation::Initialize(Ctx);
   CollectionVisitor = new DeadcodeElementCollectionVisitor(this);
 }
 
-bool DeadcodeElimination::HandleTopLevelDecl(DeclGroupRef D) {
-  for (DeclGroupRef::iterator I = D.begin(), E = D.end(); I != E; ++I) {
+bool DeadcodeElimination::HandleTopLevelDecl(clang::DeclGroupRef D) {
+for (clang::DeclGroupRef::iterator I = D.begin(), E = D.end(); I != E; ++I) {
     CollectionVisitor->TraverseDecl(*I);
   }
   return true;
@@ -45,13 +19,14 @@ bool DeadcodeElimination::HandleTopLevelDecl(DeclGroupRef D) {
 
 void DeadcodeElimination::removeUnusedVariables() {
   for (auto entry : UseInfo) {
-    if (VarDecl *VD = llvm::dyn_cast<VarDecl>(entry.first)) {
+    if (clang::VarDecl *VD = llvm::dyn_cast<clang::VarDecl>(entry.first)) {
       if (entry.second.size() == 0) {
-        SourceLocation Start = VD->getSourceRange().getBegin();
-        SourceLocation End = getEndLocation(VD->getSourceRange().getEnd());
+        clang::SourceLocation Start = VD->getSourceRange().getBegin();
+        clang::SourceLocation End =
+            getEndLocation(VD->getSourceRange().getEnd());
         if (End.isInvalid())
           continue;
-        removeSourceText(SourceRange(Start, End));
+        removeSourceText(clang::SourceRange(Start, End));
       }
     }
   }
@@ -61,35 +36,6 @@ void DeadcodeElimination::removeUnusedVariables() {
 
 void DeadcodeElimination::HandleTranslationUnit(clang::ASTContext &Ctx) {
   removeUnusedVariables();
-}
-
-DDElement DeadcodeElimination::CastElement(Stmt *S) { return S; }
-
-clang::SourceLocation
-DeadcodeElimination::getEndLocation(clang::SourceLocation Loc) {
-  const clang::SourceManager &SM = Context->getSourceManager();
-  clang::Token Tok;
-
-  clang::SourceLocation Beginning =
-      clang::Lexer::GetBeginningOfToken(Loc, SM, Context->getLangOpts());
-  clang::Lexer::getRawToken(Beginning, Tok, SM, Context->getLangOpts());
-
-  clang::SourceLocation End;
-  if (Tok.getKind() == clang::tok::semi ||
-      Tok.getKind() == clang::tok::r_brace) {
-    End = Loc.getLocWithOffset(1);
-  } else {
-    End = getEndLocationAfter(Loc, ';');
-  }
-  return End;
-}
-
-bool DeadcodeElimination::test(DDElementVector &Element) { return true; }
-
-std::vector<DDElementVector>
-DeadcodeElimination::refineChunks(std::vector<DDElementVector> &Chunks) {
-  std::vector<DDElementVector> result;
-  return result;
 }
 
 bool DeadcodeElementCollectionVisitor::VisitDeclRefExpr(

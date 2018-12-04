@@ -78,53 +78,6 @@ bool LocalReduction::callOracle() {
   }
 }
 
-clang::SourceLocation
-LocalReduction::getEndLocation(clang::SourceLocation Loc) {
-  const clang::SourceManager &SM = Context->getSourceManager();
-  clang::Token Tok;
-
-  clang::SourceLocation Beginning =
-      clang::Lexer::GetBeginningOfToken(Loc, SM, Context->getLangOpts());
-  clang::Lexer::getRawToken(Beginning, Tok, SM, Context->getLangOpts());
-
-  clang::SourceLocation End;
-  if (Tok.getKind() == clang::tok::semi ||
-      Tok.getKind() == clang::tok::r_brace) {
-    End = Loc.getLocWithOffset(1);
-  } else {
-    End = getEndLocationAfter(Loc, ';');
-  }
-  return End;
-}
-
-SourceLocation LocalReduction::getEndOfStmt(Stmt *S) {
-  if (CompoundStmt *CS = llvm::dyn_cast<CompoundStmt>(S))
-    return CS->getRBracLoc().getLocWithOffset(1);
-  if (IfStmt *IS = llvm::dyn_cast<IfStmt>(S))
-    return getEndLocation(IS->getSourceRange().getEnd());
-  if (WhileStmt *WS = llvm::dyn_cast<WhileStmt>(S))
-    return getEndOfStmt(WS->getBody());
-  if (BinaryOperator *BO = llvm::dyn_cast<BinaryOperator>(S))
-    return getEndLocationAfter(BO->getSourceRange(), ';');
-  if (ReturnStmt *RS = llvm::dyn_cast<ReturnStmt>(S))
-    return getEndLocationAfter(RS->getSourceRange(), ';');
-  if (GotoStmt *GS = llvm::dyn_cast<GotoStmt>(S))
-    return getEndLocationAfter(GS->getSourceRange(), ';');
-  if (BreakStmt *BS = llvm::dyn_cast<BreakStmt>(S))
-    return getEndLocationAfter(BS->getSourceRange(), ';');
-  if (ContinueStmt *CS = llvm::dyn_cast<ContinueStmt>(S))
-    return getEndLocationAfter(CS->getSourceRange(), ';');
-  if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S))
-    return DS->getSourceRange().getEnd().getLocWithOffset(1);
-  if (CallExpr *CE = llvm::dyn_cast<CallExpr>(S))
-    return getEndLocationAfter(CE->getSourceRange(), ';');
-  if (UnaryOperator *UO = llvm::dyn_cast<UnaryOperator>(S))
-    return getEndLocationAfter(UO->getSourceRange(), ';');
-  if (LabelStmt *LS = llvm::dyn_cast<LabelStmt>(S))
-    return getEndOfStmt(LS->getSubStmt());
-  return S->getSourceRange().getEnd().getLocWithOffset(1);
-}
-
 bool LocalReduction::test(std::vector<DDElement> &ToBeRemoved) {
   std::vector<clang::SourceRange> Ranges;
   std::vector<std::string> Reverts;
