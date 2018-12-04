@@ -421,12 +421,14 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
 
 void LocalReduction::reduceCompound(CompoundStmt *CS) {
   auto Stmts = getBodyStatements(CS);
-  for (auto S : Stmts)
-    Queue.push(S);
   DDElementVector Elements;
   Elements.resize(Stmts.size());
   std::transform(Stmts.begin(), Stmts.end(), Elements.begin(), CastElement);
-  doDeltaDebugging(Elements);
+  DDElementSet Removed = doDeltaDebugging(Elements);
+  for (auto S : Stmts) {
+    if (Removed.find(S) == Removed.end())
+      Queue.push(S);
+  }
 }
 
 void LocalReduction::reduceLabel(LabelStmt *LS) {

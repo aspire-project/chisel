@@ -20,7 +20,7 @@ public:
 protected:
   virtual void Initialize(clang::ASTContext &Ctx);
 
-  void doDeltaDebugging(std::vector<DDElement> &Decls);
+  DDElementSet doDeltaDebugging(std::vector<DDElement> &Decls);
 
   virtual bool test(std::vector<DDElement> &ToBeRemoved) = 0;
   virtual bool callOracle();

@@ -159,8 +159,10 @@ DDElementVector Reduction::toVector(DDElementSet &Set) {
   return Vec;
 }
 
-void Reduction::doDeltaDebugging(DDElementVector &Decls) {
+DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
   DDElementVector Target = Decls;
+  DDElementSet Removed;
+
   int n = 2;
   while (Target.size() >= 1) {
     llvm::outs() << "\rRunning delta debugging  Size: " +
@@ -174,6 +176,7 @@ void Reduction::doDeltaDebugging(DDElementVector &Decls) {
         auto TargetSet = toSet(Target);
         auto ChunkSet = toSet(Chunk);
         auto Diff = setDifference(TargetSet, ChunkSet);
+        Removed.insert(ChunkSet.begin(), ChunkSet.end());
         Target = toVector(Diff);
         n = std::max(n - 1, 2);
         ComplementSucceeding = true;
@@ -188,4 +191,5 @@ void Reduction::doDeltaDebugging(DDElementVector &Decls) {
       n = std::min(n * 2, static_cast<int>(Target.size()));
     }
   }
+  return Removed;
 }
