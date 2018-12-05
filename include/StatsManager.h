@@ -20,6 +20,8 @@ public:
   static void IncreaseNumOfFunctions();
   static void IncreaseNumOfStatements();
 
+  static bool isCountableStatement(clang::Stmt *S);
+
 private:
   StatsManager() {}
   StatsManager(std::string &FileName);
