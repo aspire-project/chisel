@@ -26,7 +26,6 @@ protected:
   clang::SourceLocation getDeclGroupRefEndLoc(clang::DeclGroupRef DGR);
   std::string getSourceText(const clang::SourceRange &SR);
 
-  void writeToFile(std::string Filename);
   void removeSourceText(const clang::SourceRange &SR);
 
   clang::ASTContext *Context;

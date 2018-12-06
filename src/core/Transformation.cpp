@@ -7,14 +7,6 @@ void Transformation::Initialize(clang::ASTContext &C) {
   TheRewriter.setSourceMgr(Context->getSourceManager(), Context->getLangOpts());
 }
 
-void Transformation::writeToFile(std::string Filename) {
-  std::error_code error_code;
-  llvm::raw_fd_ostream outFile(Filename, error_code, llvm::sys::fs::F_None);
-  TheRewriter.getEditBuffer(Context->getSourceManager().getMainFileID())
-      .write(outFile);
-  outFile.close();
-}
-
 clang::SourceLocation Transformation::getEndOfStmt(clang::Stmt *S) {
   if (clang::NullStmt *NS = llvm::dyn_cast<clang::NullStmt>(S))
     return NS->getSemiLoc().getLocWithOffset(1);
