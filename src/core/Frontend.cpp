@@ -35,8 +35,9 @@ bool Frontend::Parse(std::string &InputFile, clang::ASTConsumer *R) {
   Diag.setSuppressAllDiagnostics(true);
   Diag.setIgnoreAllWarnings(true);
 
+  CI->getDiagnosticClient().BeginSourceFile(CI->getLangOpts(),
+                                            &CI->getPreprocessor());
   ParseAST(CI->getSema());
-
   CI->getDiagnosticClient().EndSourceFile();
   return true;
 }
