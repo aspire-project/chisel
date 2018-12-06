@@ -90,7 +90,7 @@ Transformation::getEndLocationUntil(clang::SourceRange Range, char Symbol) {
 }
 
 void Transformation::removeSourceText(const clang::SourceRange &SR) {
-  std::string Text = getSourceText(SR);
+  llvm::StringRef Text = getSourceText(SR);
   std::string Replacement = "";
   for (auto const &chr : Text) {
     if (chr == '\n')
@@ -103,11 +103,10 @@ void Transformation::removeSourceText(const clang::SourceRange &SR) {
   TheRewriter.ReplaceText(SR, Replacement);
 }
 
-std::string Transformation::getSourceText(const clang::SourceRange &SR) {
+llvm::StringRef Transformation::getSourceText(const clang::SourceRange &SR) {
   const clang::SourceManager *SM = &Context->getSourceManager();
-  llvm::StringRef ref = clang::Lexer::getSourceText(
-      clang::CharSourceRange::getCharRange(SR), *SM, clang::LangOptions());
-  return ref.str();
+  return clang::Lexer::getSourceText(clang::CharSourceRange::getCharRange(SR),
+                                     *SM, clang::LangOptions());
 }
 
 clang::SourceLocation

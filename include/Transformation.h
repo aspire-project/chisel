@@ -24,7 +24,7 @@ protected:
   clang::SourceLocation getEndLocationFromBegin(clang::SourceRange Range);
   int getOffsetUntil(const char *Buf, char Symbol);
   clang::SourceLocation getDeclGroupRefEndLoc(clang::DeclGroupRef DGR);
-  std::string getSourceText(const clang::SourceRange &SR);
+  llvm::StringRef getSourceText(const clang::SourceRange &SR);
 
   void removeSourceText(const clang::SourceRange &SR);
 

@@ -75,7 +75,7 @@ bool LocalReduction::callOracle() {
 
 bool LocalReduction::test(std::vector<DDElement> &ToBeRemoved) {
   std::vector<clang::SourceRange> Ranges;
-  std::vector<std::string> Reverts;
+  std::vector<llvm::StringRef> Reverts;
 
   for (auto Element : ToBeRemoved) {
     if (Element.isNull())
@@ -95,7 +95,7 @@ bool LocalReduction::test(std::vector<DDElement> &ToBeRemoved) {
 
     SourceRange Range(Start, End);
     Ranges.emplace_back(Range);
-    std::string Revert = getSourceText(Range);
+    llvm::StringRef Revert = getSourceText(Range);
     Reverts.emplace_back(Revert);
     removeSourceText(SourceRange(Start, End));
   }
@@ -308,7 +308,7 @@ void LocalReduction::reduceIf(IfStmt *IS) {
       EndThen.isInvalid())
     return;
 
-  std::string RevertIf = getSourceText(SourceRange(BeginIf, EndIf));
+  llvm::StringRef RevertIf = getSourceText(SourceRange(BeginIf, EndIf));
 
   if (IS->getElse()) {
     SourceLocation ElseLoc = IS->getElseLoc();
@@ -354,14 +354,14 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
   SourceLocation EndCond =
       Body->getSourceRange().getBegin().getLocWithOffset(-1);
 
-  std::string RevertWhile = getSourceText(SourceRange(BeginWhile, EndWhile));
+  llvm::StringRef Revert = getSourceText(SourceRange(BeginWhile, EndWhile));
 
   removeSourceText(SourceRange(BeginWhile, EndCond));
   TheRewriter.overwriteChangedFiles();
   if (callOracle()) {
     Queue.push(Body);
   } else {
-    TheRewriter.ReplaceText(SourceRange(BeginWhile, EndWhile), RevertWhile);
+    TheRewriter.ReplaceText(SourceRange(BeginWhile, EndWhile), Revert);
     TheRewriter.overwriteChangedFiles();
     Queue.push(Body);
   }

@@ -43,7 +43,7 @@ bool GlobalReduction::callOracle() {
 bool GlobalReduction::test(std::vector<DDElement> &ToBeRemoved) {
   const clang::SourceManager *SM = &Context->getSourceManager();
   std::vector<clang::SourceRange> Ranges;
-  std::vector<std::string> Reverts;
+  std::vector<llvm::StringRef> Reverts;
 
   for (auto const &D : ToBeRemoved) {
     clang::SourceLocation Start =
@@ -62,8 +62,8 @@ bool GlobalReduction::test(std::vector<DDElement> &ToBeRemoved) {
     }
     const clang::SourceRange Range(Start, End);
     Ranges.emplace_back(Range);
-    std::string currRevert = getSourceText(Range);
-    Reverts.emplace_back(currRevert);
+    llvm::StringRef CurrRevert = getSourceText(Range);
+    Reverts.emplace_back(CurrRevert);
     removeSourceText(Range);
   }
 
