@@ -35,20 +35,23 @@ void StatsManager::IncreaseNumOfStatements() { NumOfStatements++; }
 
 bool StatsManager::isCountableStatement(clang::Stmt *S) {
   if (clang::Expr *E = llvm::dyn_cast<clang::Expr>(S)) {
-    if (clang::BinaryOperator *BO = llvm::dyn_cast<clang::BinaryOperator>(E))
-      if (BO->isAssignmentOp())
-        return true;
-      else if (clang::UnaryOperator *UO =
-                   llvm::dyn_cast<clang::UnaryOperator>(E))
-        if (UO->isIncrementDecrementOp())
-          return true;
-      else if (clang::CallExpr *CE = llvm::dyn_cast<clang::CallExpr>(E))
-        return true;
+    if (clang::BinaryOperator *BO = llvm::dyn_cast<clang::BinaryOperator>(E)) {
+      return BO->isAssignmentOp();
+    } else if (clang::UnaryOperator *UO =
+                   llvm::dyn_cast<clang::UnaryOperator>(E)) {
+      return UO->isIncrementDecrementOp();
+    } else if (clang::CallExpr *CE = llvm::dyn_cast<clang::CallExpr>(E)) {
+      return true;
+    } else {
+      return false;
+    }
   } else if (clang::CompoundStmt *C = llvm::dyn_cast<clang::CompoundStmt>(S)) {
     return false;
   } else if (clang::NullStmt *N = llvm::dyn_cast<clang::NullStmt>(S)) {
     return false;
   } else if (clang::LabelStmt *L = llvm::dyn_cast<clang::LabelStmt>(S)) {
+    return false;
+  } else if (clang::DeclStmt *L = llvm::dyn_cast<clang::DeclStmt>(S)) {
     return false;
   } else {
     return true;
