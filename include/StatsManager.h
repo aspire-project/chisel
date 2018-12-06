@@ -2,7 +2,6 @@
 #define STATS_MANAGER_H
 
 #include <string>
-#include <vector>
 
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/RecursiveASTVisitor.h"
@@ -14,7 +13,7 @@ public:
   static void Print();
 
   static int GetNumOfWords() { return NumOfWords; }
-  static int GetNumOfStatements() { return StatsManager::NumOfStatements; }
+  static int GetNumOfStatements() { return NumOfStatements; }
   static int GetNumOfFunctions() { return NumOfFunctions; }
 
   static void IncreaseNumOfFunctions();
