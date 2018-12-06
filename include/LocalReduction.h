@@ -49,7 +49,6 @@ private:
 
   std::vector<clang::Decl *> Functions;
   std::queue<clang::Stmt *> Queue;
-  std::map<clang::Decl *, std::vector<clang::DeclRefExpr *>> UseInfo;
 
   LocalElementCollectionVisitor *CollectionVisitor;
   clang::FunctionDecl *CurrentFunction;
@@ -61,7 +60,6 @@ public:
   LocalElementCollectionVisitor(LocalReduction *R) : Consumer(R) {}
 
   bool VisitFunctionDecl(clang::FunctionDecl *FD);
-  bool VisitDeclRefExpr(clang::DeclRefExpr *DRE);
 
 private:
   LocalReduction *Consumer;

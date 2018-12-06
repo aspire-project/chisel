@@ -11,6 +11,7 @@
 #include "OptionManager.h"
 #include "Profiler.h"
 #include "Reduction.h"
+#include "Reformat.h"
 #include "Report.h"
 #include "StatsManager.h"
 
@@ -51,6 +52,7 @@ int main(int argc, char *argv[]) {
     Iteration++;
     llvm::outs() << "Iteration " << Iteration << " (Word: " << wc << ")\n";
     wc0 = wc;
+
     if (!OptionManager::SkipDCE) {
       llvm::outs() << "Start deadcode elimination\n";
       Transformation *DCE = new DeadcodeElimination();
@@ -72,6 +74,12 @@ int main(int argc, char *argv[]) {
     StatsManager::ComputeStats(OptionManager::InputFile);
     wc = StatsManager::GetNumOfWords();
   }
+
+  llvm::outs() << "Start reformatting\n";
+  Transformation *R = new Reformat();
+  Frontend::Parse(OptionManager::InputFile, R);
+  llvm::outs() << "\n";
+
   Profiler::GetInstance()->endChisel();
 
   Report::print();

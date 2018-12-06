@@ -1,7 +1,5 @@
 int main(void) {
-            
-                             
-                                  
-       printf("15\n");
+
+  printf("15\n");
   return 0;
 }

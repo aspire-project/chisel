@@ -109,6 +109,7 @@ bool LocalReduction::test(std::vector<DDElement> &ToBeRemoved) {
     TheRewriter.overwriteChangedFiles();
     return false;
   }
+
   return false;
 }
 
@@ -388,10 +389,5 @@ bool LocalElementCollectionVisitor::VisitFunctionDecl(FunctionDecl *FD) {
                                FD->getNameInfo().getAsString());
   if (FD->isThisDeclarationADefinition())
     Consumer->Functions.emplace_back(FD);
-  return true;
-}
-
-bool LocalElementCollectionVisitor::VisitDeclRefExpr(clang::DeclRefExpr *DRE) {
-  Consumer->UseInfo[DRE->getDecl()].emplace_back(DRE);
   return true;
 }

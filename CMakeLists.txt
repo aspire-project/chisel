@@ -28,6 +28,7 @@ add_executable(chisel
   src/core/GlobalReduction.cpp
   src/core/LocalReduction.cpp
   src/core/DeadcodeElimination.cpp
+  src/core/Reformat.cpp
   src/utils/FileManager.cpp
   src/utils/OptionManager.cpp
   src/utils/Report.cpp
