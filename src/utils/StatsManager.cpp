@@ -70,7 +70,8 @@ bool StatsComputer::HandleTopLevelDecl(clang::DeclGroupRef D) {
 }
 
 bool StatsVisitor::VisitFunctionDecl(clang::FunctionDecl *FD) {
-  StatsManager::IncreaseNumOfFunctions();
+  if (FD->isThisDeclarationADefinition())
+    StatsManager::IncreaseNumOfFunctions();
   return true;
 }
 
