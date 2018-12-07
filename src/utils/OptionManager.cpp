@@ -4,6 +4,7 @@
 #include <string>
 
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/Program.h"
 #include "llvm/Support/raw_ostream.h"
 
 const std::string usage_simple("Usage: chisel [OPTIONS]... ORACLE PROGRAM");
@@ -159,13 +160,18 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
       llvm::errs() << "The specified oracle file " << OptionManager::OracleFile
                    << " does not exist.\n";
       exit(1);
-    } if (!llvm::sys::fs::can_execute(OptionManager::OracleFile)) {
+    } else if (!llvm::sys::fs::can_execute(OptionManager::OracleFile)) {
       llvm::errs() << "The specified oracle file " << OptionManager::OracleFile
                    << " is not executable.\n";
       exit(1);
     } else if (!llvm::sys::fs::exists(OptionManager::InputFile)) {
       llvm::errs() << "The specified input file " << OptionManager::InputFile
                    << " does not exist.\n";
+      exit(1);
+    } else if (llvm::sys::ExecuteAndWait(OptionManager::OracleFile,
+                                         {OptionManager::OracleFile})) {
+      llvm::errs() << "The specified oracle file " << OptionManager::OracleFile
+                   << " cannot execute correctly.\n";
       exit(1);
     }
 
