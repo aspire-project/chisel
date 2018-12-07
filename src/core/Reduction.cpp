@@ -59,7 +59,7 @@ DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
   int n = 2;
   while (Target.size() >= 1) {
     llvm::outs() << "\rRunning delta debugging  Size: " +
-                        std::to_string(Target.size());
+                        std::to_string(Target.size()) + " ";
     auto Chunks = split(Target, n);
     bool ComplementSucceeding = false;
 

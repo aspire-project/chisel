@@ -36,10 +36,6 @@ void FileManager::saveTemp(std::string Phase, bool Status) {
 }
 
 void FileManager::Finalize() {
-  // TODO: implement clean up without using 'awk'
-  /*std::string BestClean = OptionManager::OutputDir + "/best_clean.c";
-
-  llvm::sys::fs::rename(BestClean, Best);*/
   llvm::sys::fs::copy_file(OptionManager::InputFile, OptionManager::OutputFile);
   llvm::sys::fs::copy_file(Instance->Origin, OptionManager::InputFile);
 
