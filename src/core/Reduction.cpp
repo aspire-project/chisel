@@ -14,7 +14,8 @@ void Reduction::Initialize(clang::ASTContext &C) {
 
 bool Reduction::callOracle() {
   Profiler::GetInstance()->beginOracle();
-  int Status = std::system(OptionManager::OracleFile.c_str());
+  int Status = llvm::sys::ExecuteAndWait(OptionManager::OracleFile,
+                                         {OptionManager::OracleFile});
   Profiler::GetInstance()->endOracle();
   return (Status == 0);
 }
