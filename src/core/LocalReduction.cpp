@@ -180,62 +180,60 @@ std::vector<DeclRefExpr *> LocalReduction::getDeclRefExprs(Expr *E) {
   return result;
 }
 
-void LocalReduction::addDefUse(DeclRefExpr *DRE, std::set<Decl *> &DU,
-                               std::set<DeclRefExpr *> Cache) {
-  if (std::find(Cache.begin(), Cache.end(), DRE) == std::end(Cache)) {
-    if (VarDecl *VD = llvm::dyn_cast<VarDecl>(DRE->getDecl())) {
-      DU.insert(DRE->getDecl());
-      Cache.insert(DRE);
-    }
-  }
+void LocalReduction::addDefUse(DeclRefExpr *DRE, std::set<Decl *> &DU) {
+  if (VarDecl *VD = llvm::dyn_cast<VarDecl>(DRE->getDecl()))
+    DU.insert(DRE->getDecl());
 }
 
 bool LocalReduction::brokenDependency(DDElementSet &Remaining) {
   std::set<Decl *> Defs, Uses;
-  std::set<DeclRefExpr *> VisitedDeclRefExprs;
   for (auto const &E : Remaining) {
     if (E.isNull() || !E.is<Stmt *>())
       continue;
     Stmt *S = E.get<Stmt *>();
     if (BinaryOperator *BO = llvm::dyn_cast<BinaryOperator>(S)) {
-      if (BO->isAssignmentOp() || BO->isCompoundAssignmentOp()) {
-        for (auto C : getDeclRefExprs(BO->getLHS()))
-          addDefUse(C, Defs, VisitedDeclRefExprs);
+      if (BO->isCompoundAssignmentOp() || BO->isShiftAssignOp()) {
+        for (auto C : getDeclRefExprs(BO->getLHS())) {
+          addDefUse(C, Defs);
+          addDefUse(C, Uses);
+        }
         for (auto C : getDeclRefExprs(BO->getRHS()))
-          addDefUse(C, Uses, VisitedDeclRefExprs);
+          addDefUse(C, Uses);
+      } else if (BO->isAssignmentOp()) {
+        for (auto C : getDeclRefExprs(BO->getLHS()))
+          addDefUse(C, Defs);
+        for (auto C : getDeclRefExprs(BO->getRHS()))
+          addDefUse(C, Uses);
       } else {
         for (auto C : getDeclRefExprs(BO->getLHS()))
-          addDefUse(C, Uses, VisitedDeclRefExprs);
+          addDefUse(C, Uses);
         for (auto C : getDeclRefExprs(BO->getRHS()))
-          addDefUse(C, Defs, VisitedDeclRefExprs);
+          addDefUse(C, Uses);
       }
     } else if (UnaryOperator *UO = llvm::dyn_cast<UnaryOperator>(S)) {
       switch (UO->getOpcode()) {
       case clang::OO_PlusPlus:
       case clang::OO_MinusMinus:
         for (auto C : getDeclRefExprs(UO->getSubExpr())) {
-          addDefUse(C, Defs, VisitedDeclRefExprs);
-          addDefUse(C, Uses, VisitedDeclRefExprs);
+          addDefUse(C, Defs);
+          addDefUse(C, Uses);
         }
         break;
       case clang::OO_Amp:
         for (auto C : getDeclRefExprs(UO->getSubExpr()))
-          addDefUse(C, Defs, VisitedDeclRefExprs);
+          addDefUse(C, Defs);
         break;
       default:
         for (auto C : getDeclRefExprs(UO->getSubExpr()))
-          addDefUse(C, Uses, VisitedDeclRefExprs);
+          addDefUse(C, Uses);
       }
     } else if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S)) {
-      for (auto D : DS->decls()) {
-        if (VarDecl *VD = llvm::dyn_cast<VarDecl>(D))
-          Defs.insert(D);
-      }
+      for (auto D : DS->decls())
+        Defs.insert(D);
     } else if (DeclRefExpr *DRE = llvm::dyn_cast<DeclRefExpr>(S)) {
-      addDefUse(DRE, Uses, VisitedDeclRefExprs);
+      addDefUse(DRE, Uses);
     }
   }
-
   return !(std::includes(Defs.begin(), Defs.end(), Uses.begin(), Uses.end()));
 }
 

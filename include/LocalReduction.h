@@ -43,8 +43,7 @@ private:
   std::vector<clang::DeclRefExpr *> getDeclRefExprs(clang::Expr *E);
   std::vector<clang::Stmt *> getBodyStatements(clang::CompoundStmt *CS);
 
-  void addDefUse(clang::DeclRefExpr *DRE, std::set<clang::Decl *> &DU,
-                 std::set<clang::DeclRefExpr *> Cache);
+  void addDefUse(clang::DeclRefExpr *DRE, std::set<clang::Decl *> &DU);
 
   std::vector<clang::Decl *> Functions;
   std::queue<clang::Stmt *> Queue;
