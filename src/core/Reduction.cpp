@@ -14,8 +14,11 @@ void Reduction::Initialize(clang::ASTContext &C) {
 
 bool Reduction::callOracle() {
   Profiler::GetInstance()->beginOracle();
+  llvm::StringRef DevNull("/dev/null");
+  llvm::Optional<llvm::StringRef> Redirects[] = {DevNull, DevNull, DevNull};
   int Status = llvm::sys::ExecuteAndWait(OptionManager::OracleFile,
-                                         {OptionManager::OracleFile});
+                                         {OptionManager::OracleFile},
+                                         llvm::None, Redirects);
   Profiler::GetInstance()->endOracle();
   return (Status == 0);
 }
@@ -57,9 +60,11 @@ DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
   DDElementSet Removed;
 
   int n = 2;
+  std::string FormatStr =
+      "%" + std::to_string(std::to_string(Target.size()).length()) + "d";
   while (Target.size() >= 1) {
-    llvm::outs() << "\rRunning delta debugging  Size: " +
-                        std::to_string(Target.size()) + " ";
+    llvm::outs() << "\rRunning delta debugging - Size: "
+                 << llvm::format(FormatStr.c_str(), Target.size());
     auto Chunks = split(Target, n);
     bool ComplementSucceeding = false;
 

@@ -54,10 +54,8 @@ int main(int argc, char *argv[]) {
     wc0 = wc;
 
     if (!OptionManager::SkipDCE) {
-      llvm::outs() << "Start deadcode elimination\n";
       Transformation *DCE = new DeadcodeElimination();
       Frontend::Parse(OptionManager::InputFile, DCE);
-      llvm::outs() << "\n";
     }
     if (!OptionManager::SkipGlobal) {
       llvm::outs() << "Start global reduction\n";
@@ -75,10 +73,8 @@ int main(int argc, char *argv[]) {
     wc = StatsManager::GetNumOfWords();
   }
 
-  llvm::outs() << "Start reformatting\n";
   Transformation *R = new Reformat();
   Frontend::Parse(OptionManager::InputFile, R);
-  llvm::outs() << "\n";
 
   Profiler::GetInstance()->endChisel();
 
