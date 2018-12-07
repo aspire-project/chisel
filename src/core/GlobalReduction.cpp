@@ -40,7 +40,7 @@ bool GlobalReduction::callOracle() {
   }
 }
 
-bool GlobalReduction::test(std::vector<DDElement> &ToBeRemoved) {
+bool GlobalReduction::test(DDElementVector &ToBeRemoved) {
   const clang::SourceManager *SM = &Context->getSourceManager();
   std::vector<clang::SourceRange> Ranges;
   std::vector<llvm::StringRef> Reverts;
@@ -80,16 +80,10 @@ bool GlobalReduction::test(std::vector<DDElement> &ToBeRemoved) {
   }
 }
 
-std::vector<DDElementVector>
-GlobalReduction::refineChunks(std::vector<DDElementVector> &Chunks) {
-  std::vector<DDElementVector> result;
-  for (auto const &Chunk : Chunks) {
-    if (std::all_of(std::begin(Chunk), std::end(Chunk), [&](DDElement i) {
-          return UseInfo[i.get<clang::Decl *>()].size() == 0;
-        }))
-      result.emplace_back(Chunk);
-  }
-  return result;
+bool GlobalReduction::isInvalidChunk(DDElementVector &Chunk) {
+  return !(std::all_of(std::begin(Chunk), std::end(Chunk), [&](DDElement i) {
+    return UseInfo[i.get<clang::Decl *>()].size() == 0;
+  }));
 }
 
 void GlobalElementCollectionVisitor::findAndInsert(clang::Decl *D,

@@ -25,9 +25,8 @@ private:
   static DDElement CastElement(clang::Stmt *S);
 
   bool callOracle();
-  bool test(std::vector<DDElement> &ToBeRemoved);
-  std::vector<DDElementVector>
-  refineChunks(std::vector<DDElementVector> &Chunks);
+  bool test(DDElementVector &ToBeRemoved);
+  bool isInvalidChunk(DDElementVector &Chunk);
 
   void doHierarchicalDeltaDebugging(clang::Stmt *S);
   void reduceIf(clang::IfStmt *IS);

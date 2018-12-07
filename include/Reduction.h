@@ -19,10 +19,9 @@ protected:
 
   DDElementSet doDeltaDebugging(std::vector<DDElement> &Decls);
 
-  virtual bool test(std::vector<DDElement> &ToBeRemoved) = 0;
+  virtual bool test(DDElementVector &ToBeRemoved) = 0;
   virtual bool callOracle();
-  virtual std::vector<DDElementVector>
-  refineChunks(std::vector<DDElementVector> &Chunks) = 0;
+  virtual bool isInvalidChunk(DDElementVector &Chunk) = 0;
 
   DDElementSet toSet(DDElementVector &Vec);
   DDElementSet setDifference(DDElementSet &A, DDElementSet &B);

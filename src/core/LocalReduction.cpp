@@ -73,7 +73,7 @@ bool LocalReduction::callOracle() {
   }
 }
 
-bool LocalReduction::test(std::vector<DDElement> &ToBeRemoved) {
+bool LocalReduction::test(DDElementVector &ToBeRemoved) {
   std::vector<clang::SourceRange> Ranges;
   std::vector<llvm::StringRef> Reverts;
 
@@ -239,29 +239,24 @@ bool LocalReduction::brokenDependency(DDElementSet &Remaining) {
   return !(std::includes(Defs.begin(), Defs.end(), Uses.begin(), Uses.end()));
 }
 
-std::vector<DDElementVector>
-LocalReduction::refineChunks(std::vector<DDElementVector> &Chunks) {
-  std::vector<DDElementVector> Result;
+bool LocalReduction::isInvalidChunk(DDElementVector &Chunk) {
   DDElementVector FunctionStmts = getAllChildren(CurrentFunction->getBody());
-  for (auto &Chunk : Chunks) {
-    DDElementVector AllRemovedStmts;
-    for (auto S : Chunk) {
-      auto Children = getAllChildren(S.get<Stmt *>());
-      AllRemovedStmts.insert(AllRemovedStmts.end(), Children.begin(),
-                             Children.end());
-    }
-    auto FSet = toSet(FunctionStmts);
-    auto ASet = toSet(AllRemovedStmts);
-    auto Remaining = setDifference(FSet, ASet);
-    if (noReturn(FunctionStmts, AllRemovedStmts))
-      continue;
-    if (danglingLabel(Remaining))
-      continue;
-    if (brokenDependency(Remaining))
-      continue;
-    Result.emplace_back(Chunk);
+  DDElementVector AllRemovedStmts;
+  for (auto S : Chunk) {
+    auto Children = getAllChildren(S.get<Stmt *>());
+    AllRemovedStmts.insert(AllRemovedStmts.end(), Children.begin(),
+                           Children.end());
   }
-  return Result;
+  auto FSet = toSet(FunctionStmts);
+  auto ASet = toSet(AllRemovedStmts);
+  auto Remaining = setDifference(FSet, ASet);
+  if (noReturn(FunctionStmts, AllRemovedStmts))
+    return true;
+  if (danglingLabel(Remaining))
+    return true;
+  if (brokenDependency(Remaining))
+    return true;
+  return false;
 }
 
 void LocalReduction::doHierarchicalDeltaDebugging(Stmt *S) {

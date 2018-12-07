@@ -63,8 +63,10 @@ DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
     auto Chunks = split(Target, n);
     bool ComplementSucceeding = false;
 
-    auto RefinedChunks = refineChunks(Chunks);
-    for (auto Chunk : RefinedChunks) {
+    for (auto Chunk : Chunks) {
+      if (isInvalidChunk(Chunk))
+        continue;
+
       if (test(Chunk)) {
         auto TargetSet = toSet(Target);
         auto ChunkSet = toSet(Chunk);

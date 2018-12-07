@@ -24,9 +24,8 @@ private:
   static DDElement CastElement(clang::Decl *D);
 
   bool callOracle();
-  bool test(std::vector<DDElement> &ToBeRemoved);
-  std::vector<DDElementVector>
-  refineChunks(std::vector<DDElementVector> &Chunks);
+  bool test(DDElementVector &ToBeRemoved);
+  bool isInvalidChunk(DDElementVector &Chunk);
 
   std::vector<clang::Decl *> Decls;
   std::map<clang::Decl *, std::vector<clang::DeclRefExpr *>> UseInfo;
