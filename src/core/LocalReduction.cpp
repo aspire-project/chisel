@@ -173,9 +173,8 @@ std::vector<DeclRefExpr *> LocalReduction::getDeclRefExprs(Expr *E) {
     if (C.isNull())
       continue;
     Stmt *S = C.get<Stmt *>();
-    if (DeclRefExpr *DRE = llvm::dyn_cast<DeclRefExpr>(S)) {
+    if (DeclRefExpr *DRE = llvm::dyn_cast<DeclRefExpr>(S))
       result.emplace_back(DRE);
-    }
   }
   return result;
 }
@@ -231,8 +230,10 @@ bool LocalReduction::brokenDependency(DDElementSet &Remaining) {
       for (auto D : DS->decls())
         Defs.insert(D);
     } else if (DeclRefExpr *DRE = llvm::dyn_cast<DeclRefExpr>(S)) {
-      addDefUse(DRE, Uses);
+        addDefUse(DRE, Uses);
     }
+    for (auto P : CurrentFunction->parameters())
+      Defs.insert(P);
   }
   return !(std::includes(Defs.begin(), Defs.end(), Uses.begin(), Uses.end()));
 }
