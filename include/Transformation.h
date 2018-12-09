@@ -23,7 +23,6 @@ protected:
                                             char Symbol);
   clang::SourceLocation getEndLocationFromBegin(clang::SourceRange Range);
   int getOffsetUntil(const char *Buf, char Symbol);
-  clang::SourceLocation getDeclGroupRefEndLoc(clang::DeclGroupRef DGR);
   llvm::StringRef getSourceText(const clang::SourceLocation &B,
                                 const clang::SourceLocation &E);
 
