@@ -295,7 +295,7 @@ void LocalReduction::reduceIf(IfStmt *IS) {
   SourceLocation BeginIf = IS->getSourceRange().getBegin();
   SourceLocation EndIf = getEndOfStmt(IS);
   SourceLocation EndCond =
-      IS->getThen()->getSourceRange().getBegin().getLocWithOffset(-1);
+      getEndLocationUntil(IS->getCond()->getSourceRange().getEnd(), ')');
   SourceLocation EndThen = getEndOfStmt(IS->getThen());
 
   if (BeginIf.isInvalid() || EndIf.isInvalid() || EndCond.isInvalid() ||
@@ -346,7 +346,7 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
   SourceLocation BeginWhile = WS->getSourceRange().getBegin();
   SourceLocation EndWhile = getEndOfStmt(WS);
   SourceLocation EndCond =
-      Body->getSourceRange().getBegin().getLocWithOffset(-1);
+      getEndLocationUntil(WS->getCond()->getSourceRange().getEnd(), ')');
 
   llvm::StringRef Revert =
       getSourceText(BeginWhile, EndWhile);
