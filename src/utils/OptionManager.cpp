@@ -29,7 +29,7 @@ void OptionManager::showUsage() {
       << "  --skip_dce             Do not perform static unreachability "
          "analysis\n"
       << "  --no_profile           Do not print profiling report\n"
-      << "  --verbose              Print output information\n"
+      << "  --debug                Print debug information\n"
       << "  --stat                 Count the number of statements\n";
 }
 
@@ -47,7 +47,7 @@ static struct option long_options[] = {
     {"no_global_dep", no_argument, 0, 'G'},
     {"skip_dce", no_argument, 0, 'C'},
     {"no_profile", no_argument, 0, 'p'},
-    {"verbose", no_argument, 0, 'v'},
+    {"debug", no_argument, 0, 'v'},
     {"stat", no_argument, 0, 'S'},
     {0, 0, 0, 0}};
 
@@ -67,7 +67,7 @@ bool OptionManager::GlobalDep = true;
 bool OptionManager::LocalDep = true;
 bool OptionManager::SkipDCE = false;
 bool OptionManager::Profile = true;
-bool OptionManager::Verbose = false;
+bool OptionManager::Debug = false;
 bool OptionManager::Stat = false;
 
 void OptionManager::handleOptions(int argc, char *argv[]) {
@@ -127,7 +127,7 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
       break;
 
     case 'v':
-      OptionManager::Verbose = true;
+      OptionManager::Debug = true;
       break;
 
     case 'S':

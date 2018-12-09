@@ -17,7 +17,7 @@
 
 void initialize() {
   auto Logger = spdlog::stdout_logger_mt("Logger");
-  if (OptionManager::Verbose) {
+  if (OptionManager::Debug) {
     Logger->set_level(spdlog::level::debug);
   } else {
     Logger->set_level(spdlog::level::info);

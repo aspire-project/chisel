@@ -19,7 +19,7 @@ public:
   static bool LocalDep;
   static bool SkipDCE;
   static bool Profile;
-  static bool Verbose;
+  static bool Debug;
   static bool Stat;
 
   static void showUsage();
