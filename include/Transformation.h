@@ -24,9 +24,11 @@ protected:
   clang::SourceLocation getEndLocationFromBegin(clang::SourceRange Range);
   int getOffsetUntil(const char *Buf, char Symbol);
   clang::SourceLocation getDeclGroupRefEndLoc(clang::DeclGroupRef DGR);
-  llvm::StringRef getSourceText(const clang::SourceRange &SR);
+  llvm::StringRef getSourceText(const clang::SourceLocation &B,
+                                const clang::SourceLocation &E);
 
-  void removeSourceText(const clang::SourceRange &SR);
+  void removeSourceText(const clang::SourceLocation &B,
+                        const clang::SourceLocation &E);
 
   clang::ASTContext *Context;
   clang::Rewriter TheRewriter;

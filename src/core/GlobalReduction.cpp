@@ -52,19 +52,18 @@ bool GlobalReduction::test(DDElementVector &ToBeRemoved) {
     clang::FunctionDecl *FD =
         llvm::dyn_cast<clang::FunctionDecl>(D.get<clang::Decl *>());
     if (FD && FD->isThisDeclarationADefinition()) {
-      End = FD->getSourceRange().getEnd().getLocWithOffset(1);
+      End = FD->getSourceRange().getEnd();
     } else if (clang::EmptyDecl *ED =
                    llvm::dyn_cast<clang::EmptyDecl>(D.get<clang::Decl *>())) {
-      End = ED->getSourceRange().getEnd().getLocWithOffset(1);
+      End = ED->getSourceRange().getEnd();
     } else {
-      End = getEndLocationUntil(D.get<clang::Decl *>()->getSourceRange(), ';')
-                .getLocWithOffset(1);
+      End = getEndLocationUntil(D.get<clang::Decl *>()->getSourceRange(), ';');
     }
     const clang::SourceRange Range(Start, End);
     Ranges.emplace_back(Range);
-    llvm::StringRef CurrRevert = getSourceText(Range);
+    llvm::StringRef CurrRevert = getSourceText(Start, End);
     Reverts.emplace_back(CurrRevert);
-    removeSourceText(Range);
+    removeSourceText(Start, End);
   }
 
   TheRewriter.overwriteChangedFiles();

@@ -95,9 +95,9 @@ bool LocalReduction::test(DDElementVector &ToBeRemoved) {
 
     SourceRange Range(Start, End);
     Ranges.emplace_back(Range);
-    llvm::StringRef Revert = getSourceText(Range);
+    llvm::StringRef Revert = getSourceText(Start, End);
     Reverts.emplace_back(Revert);
-    removeSourceText(SourceRange(Start, End));
+    removeSourceText(Start, End);
   }
   TheRewriter.overwriteChangedFiles();
   if (callOracle()) {
@@ -302,22 +302,22 @@ void LocalReduction::reduceIf(IfStmt *IS) {
       EndThen.isInvalid())
     return;
 
-  llvm::StringRef RevertIf = getSourceText(SourceRange(BeginIf, EndIf));
+  llvm::StringRef RevertIf = getSourceText(BeginIf, EndIf);
 
   if (IS->getElse()) {
     SourceLocation ElseLoc = IS->getElseLoc();
     if (ElseLoc.isInvalid())
       return;
 
-    removeSourceText(SourceRange(BeginIf, EndCond));
-    removeSourceText(SourceRange(ElseLoc, EndIf));
+    removeSourceText(BeginIf, EndCond);
+    removeSourceText(ElseLoc, EndIf);
     TheRewriter.overwriteChangedFiles();
     if (callOracle()) {
       Queue.push(IS->getThen());
     } else {
       TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
       TheRewriter.overwriteChangedFiles();
-      removeSourceText(SourceRange(BeginIf, ElseLoc.getLocWithOffset(4)));
+      removeSourceText(BeginIf, ElseLoc.getLocWithOffset(4));
       TheRewriter.overwriteChangedFiles();
       if (callOracle()) {
         Queue.push(IS->getElse());
@@ -329,7 +329,7 @@ void LocalReduction::reduceIf(IfStmt *IS) {
       }
     }
   } else {
-    removeSourceText(SourceRange(BeginIf, EndCond));
+    removeSourceText(BeginIf, EndCond);
     TheRewriter.overwriteChangedFiles();
     if (callOracle()) {
       Queue.push(IS->getThen());
@@ -348,9 +348,10 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
   SourceLocation EndCond =
       Body->getSourceRange().getBegin().getLocWithOffset(-1);
 
-  llvm::StringRef Revert = getSourceText(SourceRange(BeginWhile, EndWhile));
+  llvm::StringRef Revert =
+      getSourceText(BeginWhile, EndWhile);
 
-  removeSourceText(SourceRange(BeginWhile, EndCond));
+  removeSourceText(BeginWhile, EndCond);
   TheRewriter.overwriteChangedFiles();
   if (callOracle()) {
     Queue.push(Body);

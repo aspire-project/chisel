@@ -9,32 +9,34 @@ void Transformation::Initialize(clang::ASTContext &C) {
 
 clang::SourceLocation Transformation::getEndOfStmt(clang::Stmt *S) {
   if (clang::NullStmt *NS = llvm::dyn_cast<clang::NullStmt>(S))
-    return NS->getSemiLoc().getLocWithOffset(1);
+    return NS->getSemiLoc();
   if (clang::CompoundStmt *CS = llvm::dyn_cast<clang::CompoundStmt>(S))
-    return CS->getRBracLoc().getLocWithOffset(1);
+    return CS->getRBracLoc();
   if (clang::IfStmt *IS = llvm::dyn_cast<clang::IfStmt>(S))
     return getEndLocation(IS->getSourceRange().getEnd());
   if (clang::WhileStmt *WS = llvm::dyn_cast<clang::WhileStmt>(S))
     return getEndOfStmt(WS->getBody());
   if (clang::BinaryOperator *BO = llvm::dyn_cast<clang::BinaryOperator>(S))
-    return getEndLocationAfter(BO->getSourceRange(), ';');
+    return getEndLocationUntil(BO->getSourceRange(), ';');
   if (clang::ReturnStmt *RS = llvm::dyn_cast<clang::ReturnStmt>(S))
-    return getEndLocationAfter(RS->getSourceRange(), ';');
+    return getEndLocationUntil(RS->getSourceRange(), ';');
   if (clang::GotoStmt *GS = llvm::dyn_cast<clang::GotoStmt>(S))
-    return getEndLocationAfter(GS->getSourceRange(), ';');
+    return getEndLocationUntil(GS->getSourceRange(), ';');
   if (clang::BreakStmt *BS = llvm::dyn_cast<clang::BreakStmt>(S))
-    return getEndLocationAfter(BS->getSourceRange(), ';');
+    return getEndLocationUntil(BS->getSourceRange(), ';');
   if (clang::ContinueStmt *CS = llvm::dyn_cast<clang::ContinueStmt>(S))
-    return getEndLocationAfter(CS->getSourceRange(), ';');
+    return getEndLocationUntil(CS->getSourceRange(), ';');
   if (clang::DeclStmt *DS = llvm::dyn_cast<clang::DeclStmt>(S))
-    return DS->getSourceRange().getEnd().getLocWithOffset(1);
+    return DS->getSourceRange().getEnd();
   if (clang::CallExpr *CE = llvm::dyn_cast<clang::CallExpr>(S))
-    return getEndLocationAfter(CE->getSourceRange(), ';');
+    return getEndLocationUntil(CE->getSourceRange(), ';');
   if (clang::UnaryOperator *UO = llvm::dyn_cast<clang::UnaryOperator>(S))
-    return getEndLocationAfter(UO->getSourceRange(), ';');
+    return getEndLocationUntil(UO->getSourceRange(), ';');
   if (clang::LabelStmt *LS = llvm::dyn_cast<clang::LabelStmt>(S))
     return getEndOfStmt(LS->getSubStmt());
-  return S->getSourceRange().getEnd().getLocWithOffset(1);
+  if (clang::ParenExpr *PE = llvm::dyn_cast<clang::ParenExpr>(S))
+    return getEndLocationUntil(PE->getSourceRange(), ';');
+  return S->getSourceRange().getEnd();
 }
 
 int Transformation::getOffsetUntil(const char *Buf, char Symbol) {
@@ -60,9 +62,9 @@ Transformation::getEndLocation(clang::SourceLocation Loc) {
   clang::SourceLocation End;
   if (Tok.getKind() == clang::tok::semi ||
       Tok.getKind() == clang::tok::r_brace) {
-    End = Loc.getLocWithOffset(1);
+    End = Loc;
   } else {
-    End = getEndLocationAfter(Loc, ';');
+    End = getEndLocationUntil(Loc, ';');
   }
   return End;
 }
@@ -89,8 +91,9 @@ Transformation::getEndLocationUntil(clang::SourceRange Range, char Symbol) {
   return EndLoc.getLocWithOffset(Offset);
 }
 
-void Transformation::removeSourceText(const clang::SourceRange &SR) {
-  llvm::StringRef Text = getSourceText(SR);
+void Transformation::removeSourceText(const clang::SourceLocation &B,
+                                      const clang::SourceLocation &E) {
+  llvm::StringRef Text = getSourceText(B, E);
   std::string Replacement = "";
   for (auto const &chr : Text) {
     if (chr == '\n')
@@ -100,13 +103,15 @@ void Transformation::removeSourceText(const clang::SourceRange &SR) {
     else
       Replacement += chr;
   }
-  TheRewriter.ReplaceText(SR, Replacement);
+  TheRewriter.ReplaceText(clang::SourceRange(B, E), Replacement);
 }
 
-llvm::StringRef Transformation::getSourceText(const clang::SourceRange &SR) {
+llvm::StringRef Transformation::getSourceText(const clang::SourceLocation &B,
+                                              const clang::SourceLocation &E) {
   const clang::SourceManager *SM = &Context->getSourceManager();
-  return clang::Lexer::getSourceText(clang::CharSourceRange::getCharRange(SR),
-                                     *SM, clang::LangOptions());
+  return clang::Lexer::getSourceText(
+      clang::CharSourceRange::getCharRange(B, E.getLocWithOffset(1)), *SM,
+      clang::LangOptions());
 }
 
 clang::SourceLocation

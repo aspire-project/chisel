@@ -26,7 +26,7 @@ void DeadcodeElimination::removeUnusedVariables() {
             getEndLocation(VD->getSourceRange().getEnd());
         if (End.isInvalid())
           continue;
-        removeSourceText(clang::SourceRange(Start, End));
+        removeSourceText(Start, End);
       }
     }
   }
