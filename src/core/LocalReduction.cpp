@@ -317,7 +317,7 @@ void LocalReduction::reduceIf(IfStmt *IS) {
     } else {
       TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
       TheRewriter.overwriteChangedFiles();
-      removeSourceText(BeginIf, ElseLoc.getLocWithOffset(4));
+      removeSourceText(BeginIf, ElseLoc.getLocWithOffset(3));
       TheRewriter.overwriteChangedFiles();
       if (callOracle()) {
         Queue.push(IS->getElse());
