@@ -113,33 +113,16 @@ bool LocalReduction::test(DDElementVector &ToBeRemoved) {
   return false;
 }
 
-DDElementVector LocalReduction::getAllChildren(Stmt *S) {
-  std::queue<Stmt *> ToVisit;
-  DDElementVector AllChildren;
-  ToVisit.push(S);
-  while (!ToVisit.empty()) {
-    auto C = ToVisit.front();
-    ToVisit.pop();
-    AllChildren.emplace_back(C);
-    for (auto const &Child : C->children()) {
-      if (Child != NULL)
-        ToVisit.push(Child);
-    }
-  }
-
-  return AllChildren;
-}
-
-int LocalReduction::countReturnStmts(DDElementVector &Elements) {
+int LocalReduction::countReturnStmts(std::set<Stmt *> &Elements) {
   int NumReturns = 0;
   for (auto const &E : Elements)
-    if (ReturnStmt *RS = llvm::dyn_cast<ReturnStmt>(E.get<Stmt *>()))
+    if (ReturnStmt *RS = llvm::dyn_cast<ReturnStmt>(E))
       NumReturns++;
   return NumReturns;
 }
 
-bool LocalReduction::noReturn(DDElementVector &FunctionStmts,
-                              DDElementVector &AllRemovedStmts) {
+bool LocalReduction::noReturn(std::set<Stmt *> &FunctionStmts,
+                              std::set<Stmt *> &AllRemovedStmts) {
   if (CurrentFunction->getReturnType().getTypePtr()->isVoidType())
     return false;
   if (countReturnStmts(FunctionStmts) == countReturnStmts(AllRemovedStmts))
@@ -147,14 +130,13 @@ bool LocalReduction::noReturn(DDElementVector &FunctionStmts,
   return false;
 }
 
-bool LocalReduction::danglingLabel(DDElementSet &Remaining) {
+bool LocalReduction::danglingLabel(std::set<Stmt *> &Remaining) {
   std::set<LabelStmt *> LabelDefs;
   std::set<LabelStmt *> LabelUses;
 
-  for (auto const &E : Remaining) {
-    if (E.isNull() || !E.is<Stmt *>())
+  for (auto const &S : Remaining) {
+    if (!S)
       continue;
-    Stmt *S = E.get<Stmt *>();
     if (GotoStmt *GS = llvm::dyn_cast<GotoStmt>(S))
       LabelUses.insert(GS->getLabel()->getStmt());
     else if (LabelStmt *LS = llvm::dyn_cast<LabelStmt>(S))
@@ -167,11 +149,10 @@ bool LocalReduction::danglingLabel(DDElementSet &Remaining) {
 
 std::vector<DeclRefExpr *> LocalReduction::getDeclRefExprs(Expr *E) {
   std::vector<DeclRefExpr *> result;
-  DDElementVector Children = getAllChildren(E);
-  for (auto const &C : Children) {
-    if (C.isNull())
+  std::vector<Stmt *> Children = getAllChildren(E);
+  for (auto const &S : Children) {
+    if (!S)
       continue;
-    Stmt *S = C.get<Stmt *>();
     if (DeclRefExpr *DRE = llvm::dyn_cast<DeclRefExpr>(S))
       result.emplace_back(DRE);
   }
@@ -183,12 +164,11 @@ void LocalReduction::addDefUse(DeclRefExpr *DRE, std::set<Decl *> &DU) {
     DU.insert(DRE->getDecl());
 }
 
-bool LocalReduction::brokenDependency(DDElementSet &Remaining) {
+bool LocalReduction::brokenDependency(std::set<Stmt *> &Remaining) {
   std::set<Decl *> Defs, Uses;
-  for (auto const &E : Remaining) {
-    if (E.isNull() || !E.is<Stmt *>())
+  for (auto const &S : Remaining) {
+    if (!S)
       continue;
-    Stmt *S = E.get<Stmt *>();
     if (BinaryOperator *BO = llvm::dyn_cast<BinaryOperator>(S)) {
       if (BO->isCompoundAssignmentOp() || BO->isShiftAssignOp()) {
         for (auto C : getDeclRefExprs(BO->getLHS())) {
@@ -241,9 +221,22 @@ bool LocalReduction::brokenDependency(DDElementSet &Remaining) {
   return !(std::includes(Defs.begin(), Defs.end(), Uses.begin(), Uses.end()));
 }
 
+std::set<Stmt *> LocalReduction::toSet(std::vector<Stmt *> &Vec) {
+  std::set<Stmt *> S(Vec.begin(), Vec.end());
+  return S;
+}
+
+std::set<Stmt *> LocalReduction::setDifference(std::set<Stmt *> &A,
+                                               std::set<Stmt *> &B) {
+  std::set<Stmt *> Result;
+  std::set_difference(A.begin(), A.end(), B.begin(), B.end(),
+                      std::inserter(Result, Result.begin()));
+  return Result;
+}
+
 bool LocalReduction::isInvalidChunk(DDElementVector &Chunk) {
-  DDElementVector FunctionStmts = getAllChildren(CurrentFunction->getBody());
-  DDElementVector AllRemovedStmts;
+  std::vector<Stmt *> FunctionStmts = getAllChildren(CurrentFunction->getBody());
+  std::vector<Stmt *> AllRemovedStmts;
   for (auto S : Chunk) {
     auto Children = getAllChildren(S.get<Stmt *>());
     AllRemovedStmts.insert(AllRemovedStmts.end(), Children.begin(),
@@ -252,7 +245,7 @@ bool LocalReduction::isInvalidChunk(DDElementVector &Chunk) {
   auto FSet = toSet(FunctionStmts);
   auto ASet = toSet(AllRemovedStmts);
   auto Remaining = setDifference(FSet, ASet);
-  if (noReturn(FunctionStmts, AllRemovedStmts))
+  if (noReturn(FSet, ASet))
     return true;
   if (danglingLabel(Remaining))
     return true;

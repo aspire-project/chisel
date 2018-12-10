@@ -11,10 +11,10 @@ public:
   Transformation() {}
   ~Transformation() {}
 
-
 protected:
   virtual void Initialize(clang::ASTContext &Ctx);
 
+  std::vector<clang::Stmt *> getAllChildren(clang::Stmt *S);
   clang::SourceLocation getEndOfStmt(clang::Stmt *S);
   clang::SourceLocation getEndLocation(clang::SourceLocation Loc);
   clang::SourceLocation getEndLocationAfter(clang::SourceRange Range,

@@ -22,6 +22,9 @@ private:
   bool HandleTopLevelDecl(clang::DeclGroupRef D);
   void HandleTranslationUnit(clang::ASTContext &Ctx);
 
+  std::set<clang::Stmt *> toSet(std::vector<clang::Stmt *> &Vec);
+  std::set<clang::Stmt *> setDifference(std::set<clang::Stmt *> &A,
+                                        std::set<clang::Stmt *> &B);
   static DDElement CastElement(clang::Stmt *S);
 
   bool callOracle();
@@ -33,12 +36,11 @@ private:
   void reduceWhile(clang::WhileStmt *WS);
   void reduceCompound(clang::CompoundStmt *CS);
   void reduceLabel(clang::LabelStmt *LS);
-  DDElementVector getAllChildren(clang::Stmt *S);
-  int countReturnStmts(DDElementVector &Elements);
-  bool noReturn(DDElementVector &FunctionStmts,
-                DDElementVector &AllRemovedStmts);
-  bool danglingLabel(DDElementSet &Remaining);
-  bool brokenDependency(DDElementSet &Remaining);
+  int countReturnStmts(std::set<clang::Stmt *> &Elements);
+  bool noReturn(std::set<clang::Stmt *> &FunctionStmts,
+                std::set<clang::Stmt *> &AllRemovedStmts);
+  bool danglingLabel(std::set<clang::Stmt *> &Remaining);
+  bool brokenDependency(std::set<clang::Stmt *> &Remaining);
 
   std::vector<clang::DeclRefExpr *> getDeclRefExprs(clang::Expr *E);
   std::vector<clang::Stmt *> getBodyStatements(clang::CompoundStmt *CS);
