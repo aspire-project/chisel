@@ -1,0 +1,12 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: debian:sid
+    steps:
+      - checkout
+      - run: apt-get update && apt-get install -y sudo
+      - run: sudo apt-get install -y clang libclang-dev llvm-dev cmake git
+      - run: sudo apt-get install -y libspdlog-dev nlohmann-json-dev
+      - run: mkdir build && cd build && cmake .. && make -j && make test
