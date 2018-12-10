@@ -254,7 +254,7 @@ bool LocalReduction::isInvalidChunk(DDElementVector &Chunk) {
   auto Remaining = setDifference(FSet, ASet);
   if (noReturn(FunctionStmts, AllRemovedStmts))
     return true;
-  if (danglingLabel(Remaining, ASet))
+  if (danglingLabel(Remaining))
     return true;
   if (brokenDependency(Remaining))
     return true;
