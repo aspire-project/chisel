@@ -57,3 +57,9 @@ add_test(
   COMMAND ./test.sh function0
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
 )
+
+add_test(
+  NAME function1
+  COMMAND ./test.sh function1
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)

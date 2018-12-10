@@ -125,6 +125,10 @@ bool LocalReduction::noReturn(std::set<Stmt *> &FunctionStmts,
                               std::set<Stmt *> &AllRemovedStmts) {
   if (CurrentFunction->getReturnType().getTypePtr()->isVoidType())
     return false;
+  int FunctionReturns = countReturnStmts(FunctionStmts);
+  int RemovedReturns = countReturnStmts(AllRemovedStmts);
+  if (FunctionReturns == 0 || RemovedReturns == 0)
+    return false;
   if (countReturnStmts(FunctionStmts) == countReturnStmts(AllRemovedStmts))
     return true;
   return false;
