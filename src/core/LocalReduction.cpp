@@ -148,22 +148,21 @@ bool LocalReduction::noReturn(DDElementVector &FunctionStmts,
 }
 
 bool LocalReduction::danglingLabel(DDElementSet &Remaining) {
-  std::vector<GotoStmt *> Gotos;
-  std::vector<LabelStmt *> Labels;
-  for (auto S : Remaining) {
-    if (GotoStmt *GS = llvm::dyn_cast<GotoStmt>(S.get<Stmt *>())) {
-      Gotos.emplace_back(GS);
-    } else if (LabelStmt *LS = llvm::dyn_cast<LabelStmt>(S.get<Stmt *>())) {
-      Labels.emplace_back(LS);
-    }
+  std::set<LabelStmt *> LabelDefs;
+  std::set<LabelStmt *> LabelUses;
+
+  for (auto const &E : Remaining) {
+    if (E.isNull() || !E.is<Stmt *>())
+      continue;
+    Stmt *S = E.get<Stmt *>();
+    if (GotoStmt *GS = llvm::dyn_cast<GotoStmt>(S))
+      LabelUses.insert(GS->getLabel()->getStmt());
+    else if (LabelStmt *LS = llvm::dyn_cast<LabelStmt>(S))
+      LabelDefs.insert(LS);
   }
 
-  if (std::any_of(Gotos.begin(), Gotos.end(), [&](GotoStmt *G) {
-        return (std::find(Labels.begin(), Labels.end(),
-                          G->getLabel()->getStmt()) == Labels.end());
-      }))
-    return true;
-  return false;
+  return !(std::includes(LabelDefs.begin(), LabelDefs.end(), LabelUses.begin(),
+                         LabelUses.end()));
 }
 
 std::vector<DeclRefExpr *> LocalReduction::getDeclRefExprs(Expr *E) {
@@ -229,6 +228,10 @@ bool LocalReduction::brokenDependency(DDElementSet &Remaining) {
     } else if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S)) {
       for (auto D : DS->decls())
         Defs.insert(D);
+    } else if (CallExpr *CE = llvm::dyn_cast<CallExpr>(S)) {
+      for (int I = 0; I < CE->getNumArgs(); I++)
+        for (auto C : getDeclRefExprs(CE->getArg(I)))
+          addDefUse(C, Defs);
     } else if (DeclRefExpr *DRE = llvm::dyn_cast<DeclRefExpr>(S)) {
         addDefUse(DRE, Uses);
     }
@@ -251,7 +254,7 @@ bool LocalReduction::isInvalidChunk(DDElementVector &Chunk) {
   auto Remaining = setDifference(FSet, ASet);
   if (noReturn(FunctionStmts, AllRemovedStmts))
     return true;
-  if (danglingLabel(Remaining))
+  if (danglingLabel(Remaining, ASet))
     return true;
   if (brokenDependency(Remaining))
     return true;
