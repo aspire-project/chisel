@@ -238,6 +238,8 @@ std::set<Stmt *> LocalReduction::setDifference(std::set<Stmt *> &A,
 }
 
 bool LocalReduction::isInvalidChunk(DDElementVector &Chunk) {
+  if (OptionManager::SkipLocalDep)
+    return false;
   std::vector<Stmt *> FunctionStmts = getAllChildren(CurrentFunction->getBody());
   std::vector<Stmt *> AllRemovedStmts;
   for (auto S : Chunk) {

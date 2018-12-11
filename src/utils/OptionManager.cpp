@@ -24,8 +24,8 @@ void OptionManager::showUsage() {
       << "  --skip_global          Skip global-level reduction\n"
       << "  --skip_local           Skip function-level reduction\n"
       << "  --no_cache             Do not cache intermediate results\n"
-      << "  --no_local_dep         Disable local dependency checking\n"
-      << "  --no_global_dep        Disable global dependency checking\n"
+      << "  --skip_local_dep       Disable local dependency checking\n"
+      << "  --skip_global_dep      Disable global dependency checking\n"
       << "  --skip_dce             Do not perform static unreachability "
          "analysis\n"
       << "  --no_profile           Do not print profiling report\n"
@@ -43,8 +43,8 @@ static struct option long_options[] = {
     {"skip_global", no_argument, 0, 'g'},
     {"skip_local", no_argument, 0, 'l'},
     {"no_cache", no_argument, 0, 'c'},
-    {"no_local_dep", no_argument, 0, 'L'},
-    {"no_global_dep", no_argument, 0, 'G'},
+    {"skip_local_dep", no_argument, 0, 'L'},
+    {"skip_global_dep", no_argument, 0, 'G'},
     {"skip_dce", no_argument, 0, 'C'},
     {"no_profile", no_argument, 0, 'p'},
     {"debug", no_argument, 0, 'v'},
@@ -63,8 +63,8 @@ bool OptionManager::DelayLearning = true;
 bool OptionManager::SkipGlobal = false;
 bool OptionManager::SkipLocal = false;
 bool OptionManager::NoCache = true;
-bool OptionManager::GlobalDep = true;
-bool OptionManager::LocalDep = true;
+bool OptionManager::SkipGlobalDep = false;
+bool OptionManager::SkipLocalDep = false;
 bool OptionManager::SkipDCE = false;
 bool OptionManager::Profile = true;
 bool OptionManager::Debug = false;
@@ -111,11 +111,11 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
       break;
 
     case 'L':
-      OptionManager::LocalDep = false;
+      OptionManager::SkipLocalDep = true;
       break;
 
     case 'G':
-      OptionManager::GlobalDep = false;
+      OptionManager::SkipGlobalDep = true;
       break;
 
     case 'C':

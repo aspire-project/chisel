@@ -15,8 +15,8 @@ public:
   static bool SkipGlobal;
   static bool SkipLocal;
   static bool NoCache;
-  static bool GlobalDep;
-  static bool LocalDep;
+  static bool SkipGlobalDep;
+  static bool SkipLocalDep;
   static bool SkipDCE;
   static bool Profile;
   static bool Debug;

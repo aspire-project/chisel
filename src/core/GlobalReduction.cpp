@@ -80,6 +80,8 @@ bool GlobalReduction::test(DDElementVector &ToBeRemoved) {
 }
 
 bool GlobalReduction::isInvalidChunk(DDElementVector &Chunk) {
+  if (OptionManager::SkipGlobalDep)
+    return false;
   return !(std::all_of(std::begin(Chunk), std::end(Chunk), [&](DDElement i) {
     return UseInfo[i.get<clang::Decl *>()].size() == 0;
   }));
@@ -102,7 +104,7 @@ bool GlobalElementCollectionVisitor::VisitFunctionDecl(
   spdlog::get("Logger")->debug("Visit Function Decl: {}",
                                FD->getNameInfo().getAsString());
   // hard rule : must contain main()
-  if (!FD->isMain())
+  if (!OptionManager::SkipGlobalDep && !FD->isMain())
     Consumer->Decls.emplace_back(FD);
   return true;
 }
