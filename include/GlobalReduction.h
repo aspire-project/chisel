@@ -48,8 +48,6 @@ public:
 
 private:
   GlobalReduction *Consumer;
-
-  void findAndInsert(clang::Decl *D, clang::DeclRefExpr *DRE);
 };
 
 #endif // GLOBAL_REDUCTION_H

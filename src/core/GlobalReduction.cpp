@@ -85,18 +85,6 @@ bool GlobalReduction::isInvalidChunk(DDElementVector &Chunk) {
   }));
 }
 
-void GlobalElementCollectionVisitor::findAndInsert(clang::Decl *D,
-                                                   clang::DeclRefExpr *DRE) {
-  if (Consumer->UseInfo.find(D) != Consumer->UseInfo.end()) {
-    std::vector<clang::DeclRefExpr *> &Uses = Consumer->UseInfo[D];
-    Uses.emplace_back(DRE);
-  } else {
-    std::vector<clang::DeclRefExpr *> Uses;
-    Uses.emplace_back(DRE);
-    Consumer->UseInfo.insert(std::make_pair(D, Uses));
-  }
-}
-
 bool GlobalElementCollectionVisitor::VisitDeclRefExpr(clang::DeclRefExpr *DRE) {
   if (clang::FunctionDecl *FD =
           llvm::dyn_cast<clang::FunctionDecl>(DRE->getDecl())) {
@@ -114,9 +102,8 @@ bool GlobalElementCollectionVisitor::VisitFunctionDecl(
   spdlog::get("Logger")->debug("Visit Function Decl: {}",
                                FD->getNameInfo().getAsString());
   // hard rule : must contain main()
-  if (!FD->isMain()) {
+  if (!FD->isMain())
     Consumer->Decls.emplace_back(FD);
-  }
   return true;
 }
 

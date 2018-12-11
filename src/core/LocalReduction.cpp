@@ -165,7 +165,8 @@ std::vector<DeclRefExpr *> LocalReduction::getDeclRefExprs(Expr *E) {
 
 void LocalReduction::addDefUse(DeclRefExpr *DRE, std::set<Decl *> &DU) {
   if (VarDecl *VD = llvm::dyn_cast<VarDecl>(DRE->getDecl()))
-    DU.insert(DRE->getDecl());
+    if (!VD->hasGlobalStorage())
+      DU.insert(DRE->getDecl());
 }
 
 bool LocalReduction::brokenDependency(std::set<Stmt *> &Remaining) {
