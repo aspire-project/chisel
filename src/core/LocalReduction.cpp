@@ -217,8 +217,6 @@ bool LocalReduction::brokenDependency(std::set<Stmt *> &Remaining) {
       for (int I = 0; I < CE->getNumArgs(); I++)
         for (auto C : getDeclRefExprs(CE->getArg(I)))
           addDefUse(C, Defs);
-    } else if (DeclRefExpr *DRE = llvm::dyn_cast<DeclRefExpr>(S)) {
-        addDefUse(DRE, Uses);
     }
     for (auto P : CurrentFunction->parameters())
       Defs.insert(P);
