@@ -5,13 +5,13 @@
 #include "FileManager.h"
 #include "OptionManager.h"
 
-void DeadcodeElimination::Initialize(clang::ASTContext &Ctx){
+void DeadcodeElimination::Initialize(clang::ASTContext &Ctx) {
   Transformation::Initialize(Ctx);
   CollectionVisitor = new DeadcodeElementCollectionVisitor(this);
 }
 
 bool DeadcodeElimination::HandleTopLevelDecl(clang::DeclGroupRef D) {
-for (clang::DeclGroupRef::iterator I = D.begin(), E = D.end(); I != E; ++I) {
+  for (clang::DeclGroupRef::iterator I = D.begin(), E = D.end(); I != E; ++I) {
     CollectionVisitor->TraverseDecl(*I);
   }
   return true;
@@ -23,7 +23,7 @@ void DeadcodeElimination::removeUnusedVariables() {
       if (entry.second.size() == 0) {
         clang::SourceLocation Start = VD->getSourceRange().getBegin();
         clang::SourceLocation End =
-            getEndLocation(VD->getSourceRange().getEnd());
+            getEndLocationUntil(VD->getSourceRange(), ';');
         if (End.isInvalid())
           continue;
         removeSourceText(Start, End);

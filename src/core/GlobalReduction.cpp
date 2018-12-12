@@ -45,24 +45,31 @@ bool GlobalReduction::test(DDElementVector &ToBeRemoved) {
   std::vector<clang::SourceRange> Ranges;
   std::vector<llvm::StringRef> Reverts;
 
-  for (auto const &D : ToBeRemoved) {
-    clang::SourceLocation Start =
-        D.get<clang::Decl *>()->getSourceRange().getBegin();
+  for (auto const &Element : ToBeRemoved) {
+    if (Element.isNull())
+      continue;
+
+    clang::Decl *D = Element.get<clang::Decl *>();
+
+    clang::SourceLocation Start = D->getSourceRange().getBegin();
     clang::SourceLocation End;
-    clang::FunctionDecl *FD =
-        llvm::dyn_cast<clang::FunctionDecl>(D.get<clang::Decl *>());
-    if (FD && FD->isThisDeclarationADefinition()) {
-      End = FD->getSourceRange().getEnd();
-    } else if (clang::EmptyDecl *ED =
-                   llvm::dyn_cast<clang::EmptyDecl>(D.get<clang::Decl *>())) {
+
+    if (clang::FunctionDecl *FD = llvm::dyn_cast<clang::FunctionDecl>(D)) {
+      if (FD->isThisDeclarationADefinition())
+        End = FD->getSourceRange().getEnd();
+    } else if (clang::EmptyDecl *ED = llvm::dyn_cast<clang::EmptyDecl>(D)) {
       End = ED->getSourceRange().getEnd();
     } else {
-      End = getEndLocationUntil(D.get<clang::Decl *>()->getSourceRange(), ';');
+      End = getEndLocationUntil(D->getSourceRange(), ';');
     }
-    const clang::SourceRange Range(Start, End);
+
+    if (End.isInvalid() || Start.isInvalid())
+      return false;
+
+    clang::SourceRange Range(Start, End);
     Ranges.emplace_back(Range);
-    llvm::StringRef CurrRevert = getSourceText(Start, End);
-    Reverts.emplace_back(CurrRevert);
+    llvm::StringRef Revert = getSourceText(Start, End);
+    Reverts.emplace_back(Revert);
     removeSourceText(Start, End);
   }
 
@@ -71,9 +78,8 @@ bool GlobalReduction::test(DDElementVector &ToBeRemoved) {
   if (callOracle()) {
     return true;
   } else {
-    for (int i = 0; i < Reverts.size(); i++) {
+    for (int i = 0; i < Reverts.size(); i++)
       TheRewriter.ReplaceText(Ranges[i], Reverts[i]);
-    }
     TheRewriter.overwriteChangedFiles();
     return false;
   }
