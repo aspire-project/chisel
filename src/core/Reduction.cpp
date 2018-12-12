@@ -59,14 +59,28 @@ std::vector<DDElementVector> Reduction::getCandidates(DDElementVector &Decls,
     if (Complement.size() > 0)
       Result.emplace_back(Complement);
   }
-  return Result;
+
+  if (OptionManager::SkipLearning)
+    return Result;
+  else {
+    arma::uvec ChunkOrder = TheModel.sortCandidates(Decls, Result);
+    std::vector<DDElementVector> SortedResult;
+    for (int I = 0; I < Result.size(); I++)
+      if (ChunkOrder[I] != -1)
+        SortedResult.emplace_back(Result[ChunkOrder[I]]);
+    return SortedResult;
+  }
 }
 
 DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
+  Cache.clear();
   DDElementSet Removed;
   DDElementVector DeclsCopy = Decls;
 
+  TheModel.initialize(Decls);
+
   int ChunkSize = (DeclsCopy.size() + 1) / 2;
+  int Iteration = 0;
   while (DeclsCopy.size() > 0) {
     std::string FormatStr =
         "%" + std::to_string(std::to_string(DeclsCopy.size()).length()) + "d";
@@ -74,8 +88,10 @@ DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
                  << llvm::format(FormatStr.c_str(), DeclsCopy.size());
 
     bool Success = false;
+    TheModel.train(Iteration);
     auto Targets = getCandidates(DeclsCopy, ChunkSize);
     for (auto Target : Targets) {
+      Iteration++;
       if (std::find(Cache.begin(), Cache.end(), Target) != Cache.end() ||
           isInvalidChunk(Target))
         continue;
@@ -84,6 +100,7 @@ DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
         Cache.insert(Target);
 
       bool Status = test(Target);
+      TheModel.addForTraining(Decls, Target, Status);
       if (Status) {
         auto TargetSet = toSet(Target);
         Removed.insert(TargetSet.begin(), TargetSet.end());

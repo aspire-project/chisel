@@ -19,8 +19,8 @@ void OptionManager::showUsage() {
       << "  --output OUTPUT        De-bloated C file\n"
       << "  --output_dir OUTDIR    Output directory\n"
       << "  --save_temp            Save intermediate results\n"
-      << "  --no_d_tree            Disable decision tree learning\n"
-      << "  --no_delay_learning    Learn a new model for every iteration\n"
+      << "  --skip_learning        Disable decision tree learning\n"
+      << "  --skip_delay_learning  Learn a new model for every iteration\n"
       << "  --skip_global          Skip global-level reduction\n"
       << "  --skip_local           Skip function-level reduction\n"
       << "  --no_cache             Do not cache intermediate results\n"
@@ -38,8 +38,8 @@ static struct option long_options[] = {
     {"output", required_argument, 0, 'o'},
     {"output_dir", required_argument, 0, 't'},
     {"save_temp", no_argument, 0, 's'},
-    {"no_d_tree", no_argument, 0, 'D'},
-    {"no_delay_learning", no_argument, 0, 'd'},
+    {"skip_learning", no_argument, 0, 'D'},
+    {"skip_delay_learning", no_argument, 0, 'd'},
     {"skip_global", no_argument, 0, 'g'},
     {"skip_local", no_argument, 0, 'l'},
     {"no_cache", no_argument, 0, 'c'},
@@ -58,8 +58,8 @@ std::string OptionManager::OutputFile = "";
 std::string OptionManager::OracleFile = "";
 std::string OptionManager::OutputDir = "chisel-out";
 bool OptionManager::SaveTemp = false;
-bool OptionManager::DecisionTree = true;
-bool OptionManager::DelayLearning = true;
+bool OptionManager::SkipLearning = false;
+bool OptionManager::SkipDelayLearning = false;
 bool OptionManager::SkipGlobal = false;
 bool OptionManager::SkipLocal = false;
 bool OptionManager::NoCache = false;
@@ -91,11 +91,11 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
       break;
 
     case 'D':
-      OptionManager::DecisionTree = false;
+      OptionManager::SkipLearning = true;
       break;
 
     case 'd':
-      OptionManager::DelayLearning = false;
+      OptionManager::SkipDelayLearning = true;
       break;
 
     case 'g':

@@ -29,7 +29,7 @@ void Report::print() {
                << llvm::format(RightColFmt,
                                Prof->getOracleTimeRecord().getWallTime())
                << " s\n";
-  if (OptionManager::DecisionTree) {
+  if (!OptionManager::SkipLearning) {
     llvm::outs() << llvm::right_justify("Learning Time :", LeftColWidth)
                  << llvm::format(RightColFmt,
                                  Prof->getLearningTimeRecord().getWallTime())

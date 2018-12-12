@@ -10,8 +10,8 @@ public:
   static std::string OracleFile;
   static std::string OutputDir;
   static bool SaveTemp;
-  static bool DecisionTree;
-  static bool DelayLearning;
+  static bool SkipLearning;
+  static bool SkipDelayLearning;
   static bool SkipGlobal;
   static bool SkipLocal;
   static bool NoCache;

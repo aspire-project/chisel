@@ -55,3 +55,15 @@ void Profiler::endOracle() {
   OracleTimeRecord += OracleTimer.getTotalTime();
   OracleTimer.clear();
 }
+
+void Profiler::beginLearning() {
+  assert(LearningTimer.isInitialized());
+  LearningTimer.startTimer();
+}
+
+void Profiler::endLearning() {
+  assert(LearningTimer.isRunning());
+  LearningTimer.stopTimer();
+  LearningTimeRecord += LearningTimer.getTotalTime();
+  LearningTimer.clear();
+}

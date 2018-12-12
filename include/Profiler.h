@@ -37,6 +37,9 @@ public:
   void beginOracle();
   void endOracle();
 
+  void beginLearning();
+  void endLearning();
+
 private:
   Profiler() {}
   ~Profiler() {}

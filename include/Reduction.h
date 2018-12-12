@@ -3,6 +3,7 @@
 
 #include <vector>
 
+#include "ProbabilisticModel.h"
 #include "Transformation.h"
 
 using DDElement = llvm::PointerUnion<clang::Decl *, clang::Stmt *>;
@@ -27,6 +28,7 @@ protected:
   DDElementSet setDifference(DDElementSet &A, DDElementSet &B);
 
 private:
+  ProbabilisticModel TheModel;
   std::set<DDElementVector> Cache;
   DDElementVector toVector(DDElementSet &Set);
 

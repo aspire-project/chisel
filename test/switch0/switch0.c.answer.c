@@ -5,7 +5,6 @@ int main(int argc, char **argv) {
 
   case 3:
     y = 0;
-    break;
   }
   return x + y;
 }

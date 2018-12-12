@@ -31,6 +31,7 @@ add_executable(chisel
   src/core/LocalReduction.cpp
   src/core/DeadcodeElimination.cpp
   src/core/Reformat.cpp
+  src/core/ProbabilisticModel.cpp
   src/utils/FileManager.cpp
   src/utils/OptionManager.cpp
   src/utils/Report.cpp
