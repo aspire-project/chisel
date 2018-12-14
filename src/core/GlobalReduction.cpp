@@ -94,13 +94,14 @@ bool GlobalReduction::isInvalidChunk(DDElementVector &Chunk) {
 }
 
 bool GlobalElementCollectionVisitor::VisitDeclRefExpr(clang::DeclRefExpr *DRE) {
-  if (clang::FunctionDecl *FD =
-          llvm::dyn_cast<clang::FunctionDecl>(DRE->getDecl())) {
-    if (FD->isThisDeclarationADefinition()) {
-      Consumer->UseInfo[FD].emplace_back(DRE);
-    } else {
-      Consumer->UseInfo[DRE->getDecl()].emplace_back(DRE);
-    }
+  auto *D = DRE->getDecl();
+  if (clang::VarDecl *VD = llvm::dyn_cast<clang::VarDecl>(D)) {
+    if (VD->hasGlobalStorage())
+      Consumer->UseInfo[VD].emplace_back(DRE);
+  } else if (llvm::isa<clang::FunctionDecl>(D) ||
+             llvm::isa<clang::RecordDecl>(D) || llvm::isa<clang::EnumDecl>(D) ||
+             llvm::isa<clang::TypedefDecl>(D)) {
+    Consumer->UseInfo[D].emplace_back(DRE);
   }
   return true;
 }
@@ -110,8 +111,9 @@ bool GlobalElementCollectionVisitor::VisitFunctionDecl(
   spdlog::get("Logger")->debug("Visit Function Decl: {}",
                                FD->getNameInfo().getAsString());
   // hard rule : must contain main()
-  if (!OptionManager::SkipGlobalDep && !FD->isMain())
-    Consumer->Decls.emplace_back(FD);
+  if (FD->isMain() && !OptionManager::SkipGlobalDep)
+    return true;
+  Consumer->Decls.emplace_back(FD);
   return true;
 }
 
