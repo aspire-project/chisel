@@ -27,8 +27,11 @@ protected:
   DDElementSet setDifference(DDElementSet &A, DDElementSet &B);
 
 private:
+  std::set<DDElementVector> Cache;
   DDElementVector toVector(DDElementSet &Set);
-  std::vector<DDElementVector> split(DDElementVector &Vec, int n);
+
+  std::vector<DDElementVector> getCandidates(DDElementVector &Decls,
+                                             int ChunkSize);
 };
 
 #endif // REDUCTION_H

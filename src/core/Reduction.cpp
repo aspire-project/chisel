@@ -23,21 +23,6 @@ bool Reduction::callOracle() {
   return (Status == 0);
 }
 
-std::vector<DDElementVector> Reduction::split(DDElementVector &Vec, int n) {
-  std::vector<DDElementVector> Result;
-  int Length = static_cast<int>(Vec.size()) / n;
-  int Remain = static_cast<int>(Vec.size()) % n;
-
-  int Begin = 0, End = 0;
-  for (int i = 0; i < std::min(n, static_cast<int>(Vec.size())); ++i) {
-    End += (Remain > 0) ? (Length + !!(Remain--)) : Length;
-    Result.emplace_back(
-        DDElementVector(Vec.begin() + Begin, Vec.begin() + End));
-    Begin = End;
-  }
-  return Result;
-}
-
 DDElementSet Reduction::toSet(DDElementVector &Vec) {
   DDElementSet S(Vec.begin(), Vec.end());
   return S;
@@ -55,40 +40,69 @@ DDElementVector Reduction::toVector(DDElementSet &Set) {
   return Vec;
 }
 
+std::vector<DDElementVector> Reduction::getCandidates(DDElementVector &Decls,
+                                                      int ChunkSize) {
+  if (Decls.size() == 1)
+    return {Decls};
+  std::vector<DDElementVector> Result;
+  int Partitions = Decls.size() / ChunkSize;
+  for (int Idx = 0; Idx < Partitions; Idx++) {
+    DDElementVector Target;
+    Target.insert(Target.end(), Decls.begin() + Idx * ChunkSize,
+                  Decls.begin() + (Idx + 1) * ChunkSize);
+    if (Target.size() > 0)
+      Result.emplace_back(Target);
+  }
+  for (int Idx = 0; Idx < Partitions; Idx++) {
+    DDElementVector Complement;
+    Complement.insert(Complement.end(), Decls.begin(),
+                      Decls.begin() + Idx * ChunkSize);
+    Complement.insert(Complement.end(), Decls.begin() + (Idx + 1) * ChunkSize,
+                      Decls.end());
+    if (Complement.size() > 0)
+      Result.emplace_back(Complement);
+  }
+  return Result;
+}
+
 DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
-  DDElementVector Target = Decls;
-  DDElementSet Removed;
-
-  int n = 2;
   std::string FormatStr =
-      "%" + std::to_string(std::to_string(Target.size()).length()) + "d";
-  while (Target.size() >= 1) {
-    llvm::outs() << "\rRunning delta debugging - Size: "
-                 << llvm::format(FormatStr.c_str(), Target.size());
-    auto Chunks = split(Target, n);
-    bool ComplementSucceeding = false;
+      "%" + std::to_string(std::to_string(Decls.size()).length()) + "d";
+  llvm::outs() << "\rRunning delta debugging - Size: "
+               << llvm::format(FormatStr.c_str(), Decls.size());
 
-    for (auto Chunk : Chunks) {
-      if (isInvalidChunk(Chunk))
+  DDElementSet Removed;
+  DDElementVector DeclsCopy = Decls;
+
+  int ChunkSize = (DeclsCopy.size() + 1) / 2;
+  while (DeclsCopy.size() > 0) {
+    bool Success = false;
+    auto Targets = getCandidates(DeclsCopy, ChunkSize);
+    for (auto Target : Targets) {
+      if (std::find(Cache.begin(), Cache.end(), Target) != Cache.end() ||
+          isInvalidChunk(Target))
         continue;
 
-      if (test(Chunk)) {
+      if (!OptionManager::NoCache)
+        Cache.insert(Target);
+
+      bool Status = test(Target);
+      if (Status) {
         auto TargetSet = toSet(Target);
-        auto ChunkSet = toSet(Chunk);
-        auto Diff = setDifference(TargetSet, ChunkSet);
-        Removed.insert(ChunkSet.begin(), ChunkSet.end());
-        Target = toVector(Diff);
-        n = std::max(n - 1, 2);
-        ComplementSucceeding = true;
+        Removed.insert(TargetSet.begin(), TargetSet.end());
+        for (auto T : Target)
+          DeclsCopy.erase(std::remove(DeclsCopy.begin(), DeclsCopy.end(), T),
+                          DeclsCopy.end());
+        Success = true;
         break;
       }
     }
-
-    if (!ComplementSucceeding) {
-      if (n == Target.size()) {
+    if (Success) {
+      ChunkSize = (DeclsCopy.size() + 1) / 2;
+    } else {
+      if (ChunkSize == 1)
         break;
-      }
-      n = std::min(n * 2, static_cast<int>(Target.size()));
+      ChunkSize = (ChunkSize + 1) / 2;
     }
   }
   return Removed;
