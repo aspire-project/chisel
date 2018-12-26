@@ -44,11 +44,10 @@ bool LocalReduction::HandleTopLevelDecl(DeclGroupRef D) {
 }
 
 void LocalReduction::HandleTranslationUnit(clang::ASTContext &Ctx) {
-  for (auto const &f : Functions) {
-    Queue.push(f->getBody());
+  for (auto const &FD : Functions) {
+    Queue.push(FD->getBody());
 
-    if (FunctionDecl *FD = llvm::dyn_cast<FunctionDecl>(f))
-      CurrentFunction = FD;
+    CurrentFunction = FD;
 
     while (!Queue.empty()) {
       Stmt *S = Queue.front();

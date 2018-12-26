@@ -48,7 +48,7 @@ private:
 
   void addDefUse(clang::DeclRefExpr *DRE, std::set<clang::Decl *> &DU);
 
-  std::vector<clang::Decl *> Functions;
+  std::vector<clang::FunctionDecl *> Functions;
   std::queue<clang::Stmt *> Queue;
 
   LocalElementCollectionVisitor *CollectionVisitor;
