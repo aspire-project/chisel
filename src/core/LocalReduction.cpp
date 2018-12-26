@@ -81,14 +81,9 @@ bool LocalReduction::test(DDElementVector &ToBeRemoved) {
     if (Element.isNull())
       continue;
 
-    clang::SourceLocation Start =
-        Element.get<Stmt *>()->getSourceRange().getBegin();
-    clang::SourceLocation End;
     clang::Stmt *S = Element.get<Stmt *>();
-    if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S))
-      continue;
-
-    End = getEndOfStmt(S);
+    clang::SourceLocation Start = S->getSourceRange().getBegin();
+    clang::SourceLocation End = getEndOfStmt(S);
 
     if (End.isInvalid() || Start.isInvalid())
       return false;
@@ -378,6 +373,17 @@ void LocalReduction::reduceCompound(CompoundStmt *CS) {
 
 void LocalReduction::reduceLabel(LabelStmt *LS) {
   Queue.push(LS->getSubStmt());
+}
+
+void LocalReduction::filterElements(DDElementVector &Vec) {
+  auto I = Vec.begin();
+  while (I != Vec.end()) {
+    clang::Stmt *S = (*I).get<Stmt *>();
+    if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S))
+      Vec.erase(I);
+    else
+      I++;
+  }
 }
 
 bool LocalElementCollectionVisitor::VisitFunctionDecl(FunctionDecl *FD) {

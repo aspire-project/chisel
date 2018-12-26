@@ -26,6 +26,7 @@ private:
   bool callOracle();
   bool test(DDElementVector &ToBeRemoved);
   bool isInvalidChunk(DDElementVector &Chunk);
+  void filterElements(DDElementVector &Vec);
 
   std::vector<clang::Decl *> Decls;
   std::map<clang::Decl *, std::vector<clang::DeclRefExpr *>> UseInfo;

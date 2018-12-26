@@ -30,6 +30,7 @@ private:
   bool callOracle();
   bool test(DDElementVector &ToBeRemoved);
   bool isInvalidChunk(DDElementVector &Chunk);
+  void filterElements(DDElementVector &Vec);
 
   void doHierarchicalDeltaDebugging(clang::Stmt *S);
   void reduceIf(clang::IfStmt *IS);

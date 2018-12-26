@@ -22,6 +22,7 @@ protected:
   virtual bool test(DDElementVector &ToBeRemoved) = 0;
   virtual bool callOracle();
   virtual bool isInvalidChunk(DDElementVector &Chunk) = 0;
+  virtual void filterElements(DDElementVector &Vec) = 0;
 
   DDElementSet toSet(DDElementVector &Vec);
   DDElementSet setDifference(DDElementSet &A, DDElementSet &B);

@@ -66,6 +66,8 @@ std::vector<DDElementVector> Reduction::getCandidates(DDElementVector &Decls,
 }
 
 DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
+  filterElements(Decls);
+
   std::string FormatStr =
       "%" + std::to_string(std::to_string(Decls.size()).length()) + "d";
   llvm::outs() << "\rRunning delta debugging - Size: "
