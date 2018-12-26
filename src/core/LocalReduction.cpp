@@ -45,6 +45,7 @@ bool LocalReduction::HandleTopLevelDecl(DeclGroupRef D) {
 
 void LocalReduction::HandleTranslationUnit(clang::ASTContext &Ctx) {
   for (auto const &FD : Functions) {
+    llvm::outs() << "Reduce " << FD->getNameInfo().getAsString() << "\n";
     Queue.push(FD->getBody());
 
     CurrentFunction = FD;

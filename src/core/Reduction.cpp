@@ -107,5 +107,7 @@ DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
       ChunkSize = (ChunkSize + 1) / 2;
     }
   }
+  llvm::outs() << "\n";
+
   return Removed;
 }
