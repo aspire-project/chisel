@@ -68,16 +68,16 @@ std::vector<DDElementVector> Reduction::getCandidates(DDElementVector &Decls,
 DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
   filterElements(Decls);
 
-  std::string FormatStr =
-      "%" + std::to_string(std::to_string(Decls.size()).length()) + "d";
-  llvm::outs() << "\rRunning delta debugging - Size: "
-               << llvm::format(FormatStr.c_str(), Decls.size());
-
   DDElementSet Removed;
   DDElementVector DeclsCopy = Decls;
 
   int ChunkSize = (DeclsCopy.size() + 1) / 2;
   while (DeclsCopy.size() > 0) {
+    std::string FormatStr =
+        "%" + std::to_string(std::to_string(DeclsCopy.size()).length()) + "d";
+    llvm::outs() << "\rRunning delta debugging - Size: "
+                 << llvm::format(FormatStr.c_str(), DeclsCopy.size());
+
     bool Success = false;
     auto Targets = getCandidates(DeclsCopy, ChunkSize);
     for (auto Target : Targets) {
