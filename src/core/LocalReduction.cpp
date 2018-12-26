@@ -361,9 +361,15 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
 
 void LocalReduction::reduceCompound(CompoundStmt *CS) {
   auto Stmts = getBodyStatements(CS);
+  filterElements(Stmts);
+
   DDElementVector Elements;
+  if (Stmts.size() == 0)
+    return;
+
   Elements.resize(Stmts.size());
   std::transform(Stmts.begin(), Stmts.end(), Elements.begin(), CastElement);
+
   DDElementSet Removed = doDeltaDebugging(Elements);
   for (auto S : Stmts) {
     if (Removed.find(S) == Removed.end())
@@ -375,10 +381,10 @@ void LocalReduction::reduceLabel(LabelStmt *LS) {
   Queue.push(LS->getSubStmt());
 }
 
-void LocalReduction::filterElements(DDElementVector &Vec) {
+void LocalReduction::filterElements(std::vector<clang::Stmt *> &Vec) {
   auto I = Vec.begin();
   while (I != Vec.end()) {
-    clang::Stmt *S = (*I).get<Stmt *>();
+    clang::Stmt *S = *I;
     if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S))
       Vec.erase(I);
     else

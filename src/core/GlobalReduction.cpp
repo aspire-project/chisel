@@ -93,8 +93,6 @@ bool GlobalReduction::isInvalidChunk(DDElementVector &Chunk) {
   }));
 }
 
-void GlobalReduction::filterElements(DDElementVector &Vec) { return; }
-
 bool GlobalElementCollectionVisitor::VisitDeclRefExpr(clang::DeclRefExpr *DRE) {
   auto *D = DRE->getDecl();
   if (clang::VarDecl *VD = llvm::dyn_cast<clang::VarDecl>(D)) {

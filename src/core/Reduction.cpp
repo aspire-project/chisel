@@ -66,8 +66,6 @@ std::vector<DDElementVector> Reduction::getCandidates(DDElementVector &Decls,
 }
 
 DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
-  filterElements(Decls);
-
   DDElementSet Removed;
   DDElementVector DeclsCopy = Decls;
 
