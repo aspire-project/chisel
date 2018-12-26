@@ -62,17 +62,17 @@ void Report::print() {
                  << "\n";
   }
   StatsManager::ComputeStats(FileManager::GetInstance()->getOriginFilePath());
-  llvm::outs() << llvm::right_justify("Original #Functions :", LeftColWidth)
+  llvm::outs() << llvm::right_justify("#Functions  (Original):", LeftColWidth)
                << llvm::format("%23d", StatsManager::GetNumOfFunctions())
                << "\n";
-  llvm::outs() << llvm::right_justify("Original #Statemets :", LeftColWidth)
+  llvm::outs() << llvm::right_justify("#Statements (Original):", LeftColWidth)
                << llvm::format("%23d", StatsManager::GetNumOfStatements())
                << "\n";
   StatsManager::ComputeStats(OptionManager::InputFile);
-  llvm::outs() << llvm::right_justify("Reduced #Functions :", LeftColWidth)
+  llvm::outs() << llvm::right_justify("#Functions  (Reduced):", LeftColWidth)
                << llvm::format("%23d", StatsManager::GetNumOfFunctions())
                << "\n";
-  llvm::outs() << llvm::right_justify("Reduced #Statements :", LeftColWidth)
+  llvm::outs() << llvm::right_justify("#Statements (Reduced):", LeftColWidth)
                << llvm::format("%23d", StatsManager::GetNumOfStatements())
                << "\n";
 }
