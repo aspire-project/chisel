@@ -207,11 +207,17 @@ bool LocalReduction::brokenDependency(std::set<Stmt *> &Remaining) {
       }
     } else if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S)) {
       for (auto D : DS->decls())
-        Defs.insert(D);
+        if (VarDecl *VD = llvm::dyn_cast<VarDecl>(D))
+          if (VD->hasInit())
+            Defs.insert(D);
     } else if (CallExpr *CE = llvm::dyn_cast<CallExpr>(S)) {
       for (int I = 0; I < CE->getNumArgs(); I++)
         for (auto C : getDeclRefExprs(CE->getArg(I)))
           addDefUse(C, Defs);
+    } else if (ReturnStmt *RS = llvm::dyn_cast<ReturnStmt>(S)) {
+      if (!CurrentFunction->getReturnType().getTypePtr()->isVoidType())
+        for (auto C : getDeclRefExprs(RS->getRetValue()))
+          addDefUse(C, Uses);
     }
     for (auto P : CurrentFunction->parameters())
       Defs.insert(P);
@@ -235,7 +241,8 @@ std::set<Stmt *> LocalReduction::setDifference(std::set<Stmt *> &A,
 bool LocalReduction::isInvalidChunk(DDElementVector &Chunk) {
   if (OptionManager::SkipLocalDep)
     return false;
-  std::vector<Stmt *> FunctionStmts = getAllChildren(CurrentFunction->getBody());
+  std::vector<Stmt *> FunctionStmts =
+      getAllChildren(CurrentFunction->getBody());
   std::vector<Stmt *> AllRemovedStmts;
   for (auto S : Chunk) {
     auto Children = getAllChildren(S.get<Stmt *>());
@@ -345,8 +352,7 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
   SourceLocation EndCond =
       getEndLocationUntil(WS->getCond()->getSourceRange().getEnd(), ')');
 
-  llvm::StringRef Revert =
-      getSourceText(BeginWhile, EndWhile);
+  llvm::StringRef Revert = getSourceText(BeginWhile, EndWhile);
 
   removeSourceText(BeginWhile, EndCond);
   TheRewriter.overwriteChangedFiles();
