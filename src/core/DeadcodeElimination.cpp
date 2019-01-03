@@ -17,9 +17,29 @@ bool DeadcodeElimination::HandleTopLevelDecl(clang::DeclGroupRef D) {
   return true;
 }
 
+bool DeadcodeElimination::isConstant(clang::Expr *E) {
+  if (clang::StringLiteral *L = llvm::dyn_cast<clang::StringLiteral>(E))
+    return true;
+  if (clang::IntegerLiteral *L = llvm::dyn_cast<clang::IntegerLiteral>(E))
+    return true;
+  if (clang::CharacterLiteral *L = llvm::dyn_cast<clang::CharacterLiteral>(E))
+    return true;
+  if (clang::CompoundLiteralExpr *L =
+          llvm::dyn_cast<clang::CompoundLiteralExpr>(E))
+    return true;
+  if (clang::FloatingLiteral *L = llvm::dyn_cast<clang::FloatingLiteral>(E))
+    return true;
+  if (clang::ImaginaryLiteral *L = llvm::dyn_cast<clang::ImaginaryLiteral>(E))
+    return true;
+  return false;
+}
+
 void DeadcodeElimination::removeUnusedVariables() {
   for (auto entry : UseInfo) {
     if (clang::VarDecl *VD = llvm::dyn_cast<clang::VarDecl>(entry.first)) {
+      if (VD->hasInit())
+        if (!isConstant(VD->getInit()))
+          continue;
       if (entry.second.size() == 0) {
         clang::SourceLocation Start = VD->getSourceRange().getBegin();
         clang::SourceLocation End =
