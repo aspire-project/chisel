@@ -14,11 +14,8 @@ void Reduction::Initialize(clang::ASTContext &C) {
 
 bool Reduction::callOracle() {
   Profiler::GetInstance()->beginOracle();
-  llvm::StringRef DevNull("/dev/null");
-  llvm::Optional<llvm::StringRef> Redirects[] = {DevNull, DevNull, DevNull};
   int Status = llvm::sys::ExecuteAndWait(OptionManager::OracleFile,
-                                         {OptionManager::OracleFile},
-                                         llvm::None, Redirects);
+                                         {OptionManager::OracleFile});
   Profiler::GetInstance()->endOracle();
   return (Status == 0);
 }
