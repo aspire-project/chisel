@@ -35,6 +35,7 @@ private:
   void doHierarchicalDeltaDebugging(clang::Stmt *S);
   void reduceIf(clang::IfStmt *IS);
   void reduceWhile(clang::WhileStmt *WS);
+  void reduceFor(clang::ForStmt *FS);
   void reduceCompound(clang::CompoundStmt *CS);
   void reduceLabel(clang::LabelStmt *LS);
   int countReturnStmts(std::set<clang::Stmt *> &Elements);

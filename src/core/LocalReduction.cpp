@@ -30,6 +30,7 @@ using Decl = clang::Decl;
 using LabelDecl = clang::LabelDecl;
 using Expr = clang::Expr;
 using DeclRefExpr = clang::DeclRefExpr;
+using ForStmt = clang::ForStmt;
 
 void LocalReduction::Initialize(clang::ASTContext &Ctx) {
   Reduction::Initialize(Ctx);
@@ -280,18 +281,19 @@ void LocalReduction::doHierarchicalDeltaDebugging(Stmt *S) {
   } else if (LabelStmt *LS = llvm::dyn_cast<LabelStmt>(S)) {
     spdlog::get("Logger")->debug("HDD Label at " + Loc);
     reduceLabel(LS);
+  } else if (ForStmt *FS = llvm::dyn_cast<ForStmt>(S)) {
+    spdlog::get("Logger")->debug("HDD FOR at " + Loc);
+    reduceFor(FS);
   } else {
     return;
-    // TODO add other cases: For, Do, Switch...
   }
 }
 
 std::vector<Stmt *> LocalReduction::getBodyStatements(CompoundStmt *CS) {
   std::vector<Stmt *> Stmts;
-  for (auto S : CS->body()) {
+  for (auto S : CS->body())
     if (S != NULL)
       Stmts.emplace_back(S);
-  }
   return Stmts;
 }
 
@@ -342,6 +344,26 @@ void LocalReduction::reduceIf(IfStmt *IS) {
       TheRewriter.overwriteChangedFiles();
       Queue.push(IS->getThen());
     }
+  }
+}
+
+void LocalReduction::reduceFor(ForStmt *FS) {
+  auto Body = FS->getBody();
+  SourceLocation BeginFor = FS->getSourceRange().getBegin();
+  SourceLocation EndFor = getEndOfStmt(FS);
+  SourceLocation EndCond =
+      getEndLocationUntil(FS->getCond()->getSourceRange().getEnd(), ')');
+
+  llvm::StringRef Revert = getSourceText(BeginFor, EndFor);
+
+  removeSourceText(BeginFor, EndCond);
+  TheRewriter.overwriteChangedFiles();
+  if (callOracle()) {
+    Queue.push(Body);
+  } else {
+    TheRewriter.ReplaceText(SourceRange(BeginFor, EndFor), Revert);
+    TheRewriter.overwriteChangedFiles();
+    Queue.push(Body);
   }
 }
 

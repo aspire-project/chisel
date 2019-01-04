@@ -65,6 +65,24 @@ add_test(
 )
 
 add_test(
+  NAME for0
+  COMMAND ./test.sh for0
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)
+
+add_test(
+  NAME for1
+  COMMAND ./test.sh for1
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)
+
+add_test(
+  NAME for2
+  COMMAND ./test.sh for2
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)
+
+add_test(
   NAME function0
   COMMAND ./test.sh function0
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
