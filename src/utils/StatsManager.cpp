@@ -59,6 +59,8 @@ bool StatsManager::isCountableStatement(clang::Stmt *S) {
       }
     }
     return false;
+  } else if (clang::SwitchCase *SC = llvm::dyn_cast<clang::SwitchCase>(S)) {
+    return false;
   } else {
     return true;
   }
