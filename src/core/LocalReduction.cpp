@@ -31,6 +31,7 @@ using LabelDecl = clang::LabelDecl;
 using Expr = clang::Expr;
 using DeclRefExpr = clang::DeclRefExpr;
 using ForStmt = clang::ForStmt;
+using SwitchStmt = clang::SwitchStmt;
 
 void LocalReduction::Initialize(clang::ASTContext &Ctx) {
   Reduction::Initialize(Ctx);
@@ -284,6 +285,9 @@ void LocalReduction::doHierarchicalDeltaDebugging(Stmt *S) {
   } else if (ForStmt *FS = llvm::dyn_cast<ForStmt>(S)) {
     spdlog::get("Logger")->debug("HDD FOR at " + Loc);
     reduceFor(FS);
+  } else if (SwitchStmt *SS = llvm::dyn_cast<SwitchStmt>(S)) {
+    spdlog::get("Logger")->debug("HDD SWITCH at " + Loc);
+    reduceSwitch(SS);
   } else {
     return;
   }
@@ -295,6 +299,42 @@ std::vector<Stmt *> LocalReduction::getBodyStatements(CompoundStmt *CS) {
     if (S != NULL)
       Stmts.emplace_back(S);
   return Stmts;
+}
+
+void LocalReduction::reduceSwitch(SwitchStmt *SS) {
+  auto Body = SS->getBody();
+  SourceLocation BeginSwitch = SS->getSourceRange().getBegin();
+  SourceLocation EndSwitch = getEndOfStmt(SS);
+
+  llvm::StringRef Revert = getSourceText(BeginSwitch, EndSwitch);
+
+  std::vector<clang::SwitchCase *> Cases;
+  for (clang::SwitchCase *SC = SS->getSwitchCaseList(); SC != NULL;
+       SC = SC->getNextSwitchCase()) {
+    if (clang::CaseStmt *Case = llvm::dyn_cast<clang::CaseStmt>(SC))
+      Cases.insert(Cases.begin(), Case);
+    if (clang::DefaultStmt *Case = llvm::dyn_cast<clang::DefaultStmt>(SC))
+      Cases.insert(Cases.begin(), Case);
+  }
+
+  SourceLocation InitialPoint = Cases.front()->getKeywordLoc();
+  for (int I = 0; I < Cases.size(); I++) {
+    SourceLocation CurrPoint = Cases[I]->getKeywordLoc().getLocWithOffset(-1);
+    removeSourceText(InitialPoint, CurrPoint);
+    if (I != Cases.size() - 1) {
+      SourceLocation NextPoint = Cases[I + 1]->getKeywordLoc();
+      removeSourceText(NextPoint, EndSwitch.getLocWithOffset(-1));
+    }
+    TheRewriter.overwriteChangedFiles();
+    if (callOracle()) {
+      Queue.push(Cases[I]);
+      return;
+    } else {
+      TheRewriter.ReplaceText(SourceRange(BeginSwitch, EndSwitch), Revert);
+      TheRewriter.overwriteChangedFiles();
+      Queue.push(Body);
+    }
+  }
 }
 
 void LocalReduction::reduceIf(IfStmt *IS) {

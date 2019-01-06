@@ -33,6 +33,7 @@ private:
   void filterElements(std::vector<clang::Stmt *> &Vec);
 
   void doHierarchicalDeltaDebugging(clang::Stmt *S);
+  void reduceSwitch(clang::SwitchStmt *SS);
   void reduceIf(clang::IfStmt *IS);
   void reduceWhile(clang::WhileStmt *WS);
   void reduceFor(clang::ForStmt *FS);
