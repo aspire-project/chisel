@@ -51,7 +51,13 @@ bool StatsManager::isCountableStatement(clang::Stmt *S) {
     return false;
   } else if (clang::LabelStmt *L = llvm::dyn_cast<clang::LabelStmt>(S)) {
     return false;
-  } else if (clang::DeclStmt *L = llvm::dyn_cast<clang::DeclStmt>(S)) {
+  } else if (clang::DeclStmt *D = llvm::dyn_cast<clang::DeclStmt>(S)) {
+    if (D->isSingleDecl()) {
+      if (clang::VarDecl *VD =
+              llvm::dyn_cast<clang::VarDecl>(D->getSingleDecl())) {
+        return VD->hasInit();
+      }
+    }
     return false;
   } else {
     return true;
