@@ -22,7 +22,7 @@ FileManager *FileManager::GetInstance() {
 
 std::string FileManager::getTempFileName(std::string Suffix) {
   std::string Name = OptionManager::OutputDir + "/" + OptionManager::InputFile +
-                     "." + Suffix + "." + std::to_string(TempCounter);
+                     "." + std::to_string(TempCounter) + "." + Suffix;
   TempCounter++;
   return Name;
 }
