@@ -175,12 +175,17 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
       exit(1);
     }
 
+    llvm::SmallString<128> OutputDirVec(OutputDir);
+    llvm::sys::fs::make_absolute(OutputDirVec);
+    OutputDir = OutputDirVec.str();
+
     if (OptionManager::OutputFile == "") {
       OptionManager::OutputFile = OptionManager::InputFile + ".chisel.c";
     }
 
     llvm::outs() << "Oracle: " << OptionManager::OracleFile << "\n";
     llvm::outs() << "Input: " << OptionManager::InputFile << "\n";
+    llvm::outs() << "Output Directory: " << OutputDir << "\n";
   } else {
     OptionManager::InputFile = std::string(argv[optind]);
 
