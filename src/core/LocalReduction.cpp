@@ -32,6 +32,7 @@ using Expr = clang::Expr;
 using DeclRefExpr = clang::DeclRefExpr;
 using ForStmt = clang::ForStmt;
 using SwitchStmt = clang::SwitchStmt;
+using DoStmt = clang::DoStmt;
 
 void LocalReduction::Initialize(clang::ASTContext &Ctx) {
   Reduction::Initialize(Ctx);
@@ -288,6 +289,9 @@ void LocalReduction::doHierarchicalDeltaDebugging(Stmt *S) {
   } else if (SwitchStmt *SS = llvm::dyn_cast<SwitchStmt>(S)) {
     spdlog::get("Logger")->debug("HDD SWITCH at " + Loc);
     reduceSwitch(SS);
+  } else if (DoStmt *DS = llvm::dyn_cast<DoStmt>(S)) {
+    spdlog::get("Logger")->debug("HDD DO/WHILE at " + Loc);
+    reduceDoWhile(DS);
   } else {
     return;
   }
@@ -422,6 +426,27 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
     Queue.push(Body);
   } else {
     TheRewriter.ReplaceText(SourceRange(BeginWhile, EndWhile), Revert);
+    TheRewriter.overwriteChangedFiles();
+    Queue.push(Body);
+  }
+}
+
+void LocalReduction::reduceDoWhile(DoStmt *DS) {
+  auto Body = DS->getBody();
+  SourceLocation BeginDo = DS->getSourceRange().getBegin();
+  SourceLocation EndDo = getEndOfStmt(DS);
+  SourceLocation EndCond =
+      getEndLocationUntil(DS->getCond()->getSourceRange().getEnd(), ')');
+
+  llvm::StringRef Revert = getSourceText(BeginDo, EndDo);
+
+  removeSourceText(BeginDo, BeginDo.getLocWithOffset(1));
+  removeSourceText(DS->getWhileLoc(), EndDo);
+  TheRewriter.overwriteChangedFiles();
+  if (callOracle()) {
+    Queue.push(Body);
+  } else {
+    TheRewriter.ReplaceText(SourceRange(BeginDo, EndDo), Revert);
     TheRewriter.overwriteChangedFiles();
     Queue.push(Body);
   }

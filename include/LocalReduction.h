@@ -36,6 +36,7 @@ private:
   void reduceSwitch(clang::SwitchStmt *SS);
   void reduceIf(clang::IfStmt *IS);
   void reduceWhile(clang::WhileStmt *WS);
+  void reduceDoWhile(clang::DoStmt *DS);
   void reduceFor(clang::ForStmt *FS);
   void reduceCompound(clang::CompoundStmt *CS);
   void reduceLabel(clang::LabelStmt *LS);

@@ -34,6 +34,8 @@ clang::SourceLocation Transformation::getEndOfStmt(clang::Stmt *S) {
     return getEndLocation(IS->getSourceRange().getEnd());
   if (clang::WhileStmt *WS = llvm::dyn_cast<clang::WhileStmt>(S))
     return getEndOfStmt(WS->getBody());
+  if (clang::DoStmt *DS = llvm::dyn_cast<clang::DoStmt>(S))
+    return getEndLocationUntil(DS->getCond()->getSourceRange(), ';');
   if (clang::ForStmt *FS = llvm::dyn_cast<clang::ForStmt>(S))
     return getEndOfStmt(FS->getBody());
   if (clang::SwitchStmt *SS = llvm::dyn_cast<clang::SwitchStmt>(S))

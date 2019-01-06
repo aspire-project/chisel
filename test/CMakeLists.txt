@@ -83,6 +83,24 @@ add_test(
 )
 
 add_test(
+  NAME do-while0
+  COMMAND ./test.sh do-while0
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)
+
+add_test(
+  NAME do-while1
+  COMMAND ./test.sh do-while1
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)
+
+add_test(
+  NAME do-while2
+  COMMAND ./test.sh do-while2
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)
+
+add_test(
   NAME switch0
   COMMAND ./test.sh switch0
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
