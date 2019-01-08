@@ -40,9 +40,8 @@ void LocalReduction::Initialize(clang::ASTContext &Ctx) {
 }
 
 bool LocalReduction::HandleTopLevelDecl(DeclGroupRef D) {
-  for (DeclGroupRef::iterator I = D.begin(), E = D.end(); I != E; ++I) {
+  for (DeclGroupRef::iterator I = D.begin(), E = D.end(); I != E; ++I)
     CollectionVisitor->TraverseDecl(*I);
-  }
   return true;
 }
 
@@ -252,9 +251,11 @@ bool LocalReduction::isInvalidChunk(DDElementVector &Chunk) {
     AllRemovedStmts.insert(AllRemovedStmts.end(), Children.begin(),
                            Children.end());
   }
-  auto FSet = toSet(FunctionStmts);
+  auto TempFSet = toSet(FunctionStmts);
+  auto FSet = setDifference(TempFSet, RemovedElements);
   auto ASet = toSet(AllRemovedStmts);
   auto Remaining = setDifference(FSet, ASet);
+
   if (noReturn(FSet, ASet))
     return true;
   if (danglingLabel(Remaining))
@@ -270,7 +271,6 @@ void LocalReduction::doHierarchicalDeltaDebugging(Stmt *S) {
   clang::SourceLocation Start = S->getSourceRange().getBegin();
   const clang::SourceManager &SM = Context->getSourceManager();
   std::string Loc = Start.printToString(SM);
-
   if (IfStmt *IS = llvm::dyn_cast<IfStmt>(S)) {
     spdlog::get("Logger")->debug("HDD IF at " + Loc);
     reduceIf(IS);
@@ -292,8 +292,6 @@ void LocalReduction::doHierarchicalDeltaDebugging(Stmt *S) {
   } else if (DoStmt *DS = llvm::dyn_cast<DoStmt>(S)) {
     spdlog::get("Logger")->debug("HDD DO/WHILE at " + Loc);
     reduceDoWhile(DS);
-  } else {
-    return;
   }
 }
 
@@ -322,21 +320,35 @@ void LocalReduction::reduceSwitch(SwitchStmt *SS) {
   }
 
   SourceLocation InitialPoint = Cases.front()->getKeywordLoc();
+  int SelectedCase = -1;
   for (int I = 0; I < Cases.size(); I++) {
-    SourceLocation CurrPoint = Cases[I]->getKeywordLoc().getLocWithOffset(-1);
-    removeSourceText(InitialPoint, CurrPoint);
-    if (I != Cases.size() - 1) {
-      SourceLocation NextPoint = Cases[I + 1]->getKeywordLoc();
-      removeSourceText(NextPoint, EndSwitch.getLocWithOffset(-1));
-    }
-    TheRewriter.overwriteChangedFiles();
-    if (callOracle()) {
-      Queue.push(Cases[I]);
-      return;
-    } else {
-      TheRewriter.ReplaceText(SourceRange(BeginSwitch, EndSwitch), Revert);
+    DDElementVector V = {Cases[I]};
+    if (!isInvalidChunk(V)) {
+      SourceLocation CurrPoint = Cases[I]->getKeywordLoc().getLocWithOffset(-1);
+      removeSourceText(InitialPoint, CurrPoint);
+      if (I != Cases.size() - 1) {
+        SourceLocation NextPoint = Cases[I + 1]->getKeywordLoc();
+        removeSourceText(NextPoint, EndSwitch.getLocWithOffset(-1));
+      }
       TheRewriter.overwriteChangedFiles();
-      Queue.push(Body);
+      if (callOracle()) {
+        Queue.push(Cases[I]);
+        SelectedCase = I;
+        break;
+      } else {
+        TheRewriter.ReplaceText(SourceRange(BeginSwitch, EndSwitch), Revert);
+        TheRewriter.overwriteChangedFiles();
+        Queue.push(Body);
+      }
+    }
+  }
+  std::set<clang::Stmt *> RemovedStmts;
+  if (SelectedCase != -1) {
+    for (int I = 0; I < Cases.size(); I++) {
+      if (I == SelectedCase)
+        continue;
+      auto TempChildren = getAllChildren(Cases[I]);
+      RemovedElements.insert(TempChildren.begin(), TempChildren.end());
     }
   }
 }
@@ -359,34 +371,56 @@ void LocalReduction::reduceIf(IfStmt *IS) {
     if (ElseLoc.isInvalid())
       return;
 
-    removeSourceText(BeginIf, EndCond);
-    removeSourceText(ElseLoc, EndIf);
-    TheRewriter.overwriteChangedFiles();
-    if (callOracle()) {
-      Queue.push(IS->getThen());
-    } else {
-      TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
-      TheRewriter.overwriteChangedFiles();
-      removeSourceText(BeginIf, ElseLoc.getLocWithOffset(3));
+    DDElementVector V = {IS->getCond(), IS->getElse()};
+    if (!isInvalidChunk(V)) {
+      removeSourceText(BeginIf, EndCond);
+      removeSourceText(ElseLoc, EndIf);
       TheRewriter.overwriteChangedFiles();
       if (callOracle()) {
-        Queue.push(IS->getElse());
+        Queue.push(IS->getThen());
+        for (auto C : V) {
+          auto Children = getAllChildren(C.get<Stmt *>());
+          RemovedElements.insert(Children.begin(), Children.end());
+        }
+      } else {
+        TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
+        TheRewriter.overwriteChangedFiles();
+
+        DDElementVector V = {IS->getCond(), IS->getThen()};
+        if (!isInvalidChunk(V)) {
+          removeSourceText(BeginIf, ElseLoc.getLocWithOffset(3));
+          TheRewriter.overwriteChangedFiles();
+          if (callOracle()) {
+            Queue.push(IS->getElse());
+            for (auto C : V) {
+              auto Children = getAllChildren(C.get<Stmt *>());
+              RemovedElements.insert(Children.begin(), Children.end());
+            }
+          } else {
+            TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
+            TheRewriter.overwriteChangedFiles();
+            Queue.push(IS->getThen());
+            Queue.push(IS->getElse());
+          }
+        }
+      }
+    }
+  } else {
+    DDElementVector V = {IS->getCond()};
+    if (!isInvalidChunk(V)) {
+      removeSourceText(BeginIf, EndCond);
+      TheRewriter.overwriteChangedFiles();
+      if (callOracle()) {
+        Queue.push(IS->getThen());
+        for (auto C : V) {
+          auto Children = getAllChildren(C.get<Stmt *>());
+          RemovedElements.insert(Children.begin(), Children.end());
+        }
       } else {
         TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
         TheRewriter.overwriteChangedFiles();
         Queue.push(IS->getThen());
-        Queue.push(IS->getElse());
       }
-    }
-  } else {
-    removeSourceText(BeginIf, EndCond);
-    TheRewriter.overwriteChangedFiles();
-    if (callOracle()) {
-      Queue.push(IS->getThen());
-    } else {
-      TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
-      TheRewriter.overwriteChangedFiles();
-      Queue.push(IS->getThen());
     }
   }
 }
@@ -399,15 +433,25 @@ void LocalReduction::reduceFor(ForStmt *FS) {
       getEndLocationUntil(FS->getCond()->getSourceRange().getEnd(), ')');
 
   llvm::StringRef Revert = getSourceText(BeginFor, EndFor);
-
-  removeSourceText(BeginFor, EndCond);
-  TheRewriter.overwriteChangedFiles();
-  if (callOracle()) {
-    Queue.push(Body);
-  } else {
-    TheRewriter.ReplaceText(SourceRange(BeginFor, EndFor), Revert);
+  DDElementVector V = {FS->getCond()};
+  if (FS->getInit())
+    V.emplace_back(FS->getInit());
+  if (FS->getInc())
+    V.emplace_back(FS->getInc());
+  if (!isInvalidChunk(V)) {
+    removeSourceText(BeginFor, EndCond);
     TheRewriter.overwriteChangedFiles();
-    Queue.push(Body);
+    if (callOracle()) {
+      Queue.push(Body);
+      for (auto C : V) {
+        auto Children = getAllChildren(C.get<Stmt *>());
+        RemovedElements.insert(Children.begin(), Children.end());
+      }
+    } else {
+      TheRewriter.ReplaceText(SourceRange(BeginFor, EndFor), Revert);
+      TheRewriter.overwriteChangedFiles();
+      Queue.push(Body);
+    }
   }
 }
 
@@ -420,14 +464,21 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
 
   llvm::StringRef Revert = getSourceText(BeginWhile, EndWhile);
 
-  removeSourceText(BeginWhile, EndCond);
-  TheRewriter.overwriteChangedFiles();
-  if (callOracle()) {
-    Queue.push(Body);
-  } else {
-    TheRewriter.ReplaceText(SourceRange(BeginWhile, EndWhile), Revert);
+  DDElementVector V = {WS->getCond()};
+  if (!isInvalidChunk(V)) {
+    removeSourceText(BeginWhile, EndCond);
     TheRewriter.overwriteChangedFiles();
-    Queue.push(Body);
+    if (callOracle()) {
+      Queue.push(Body);
+      for (auto C : V) {
+        auto Children = getAllChildren(C.get<Stmt *>());
+        RemovedElements.insert(Children.begin(), Children.end());
+      }
+    } else {
+      TheRewriter.ReplaceText(SourceRange(BeginWhile, EndWhile), Revert);
+      TheRewriter.overwriteChangedFiles();
+      Queue.push(Body);
+    }
   }
 }
 
@@ -440,15 +491,22 @@ void LocalReduction::reduceDoWhile(DoStmt *DS) {
 
   llvm::StringRef Revert = getSourceText(BeginDo, EndDo);
 
-  removeSourceText(BeginDo, BeginDo.getLocWithOffset(1));
-  removeSourceText(DS->getWhileLoc(), EndDo);
-  TheRewriter.overwriteChangedFiles();
-  if (callOracle()) {
-    Queue.push(Body);
-  } else {
-    TheRewriter.ReplaceText(SourceRange(BeginDo, EndDo), Revert);
+  DDElementVector V = {DS->getCond()};
+  if (!isInvalidChunk(V)) {
+    removeSourceText(BeginDo, BeginDo.getLocWithOffset(1));
+    removeSourceText(DS->getWhileLoc(), EndDo);
     TheRewriter.overwriteChangedFiles();
-    Queue.push(Body);
+    if (callOracle()) {
+      Queue.push(Body);
+      for (auto C : V) {
+        auto Children = getAllChildren(C.get<Stmt *>());
+        RemovedElements.insert(Children.begin(), Children.end());
+      }
+    } else {
+      TheRewriter.ReplaceText(SourceRange(BeginDo, EndDo), Revert);
+      TheRewriter.overwriteChangedFiles();
+      Queue.push(Body);
+    }
   }
 }
 
@@ -467,6 +525,10 @@ void LocalReduction::reduceCompound(CompoundStmt *CS) {
   for (auto S : Stmts) {
     if (Removed.find(S) == Removed.end())
       Queue.push(S);
+  }
+  for (auto S : Removed) {
+    auto Children = getAllChildren(S.get<clang::Stmt *>());
+    RemovedElements.insert(Children.begin(), Children.end());
   }
 }
 

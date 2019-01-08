@@ -134,3 +134,9 @@ add_test(
   COMMAND ./test.sh dce0
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
 )
+
+add_test(
+  NAME dce1
+  COMMAND ./test.sh dce1
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)

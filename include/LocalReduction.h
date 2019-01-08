@@ -51,6 +51,7 @@ private:
 
   void addDefUse(clang::DeclRefExpr *DRE, std::set<clang::Decl *> &DU);
 
+  std::set<clang::Stmt *> RemovedElements;
   std::vector<clang::FunctionDecl *> Functions;
   std::queue<clang::Stmt *> Queue;
 
