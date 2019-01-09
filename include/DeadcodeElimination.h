@@ -17,18 +17,15 @@ public:
   DeadcodeElimination() : CollectionVisitor(NULL) {}
   ~DeadcodeElimination() { delete CollectionVisitor; }
 
-  std::map<clang::Decl *, std::vector<clang::DeclRefExpr *>> UseInfo;
+  void removeUnusedElements();
+  std::map<clang::Decl *, clang::SourceRange> LocationMapping;
+  std::vector<clang::SourceLocation> UnusedLocations;
 
 private:
   void Initialize(clang::ASTContext &Ctx);
   bool HandleTopLevelDecl(clang::DeclGroupRef D);
-  void HandleTranslationUnit(clang::ASTContext &Ctx);
-
-  std::vector<clang::DeclRefExpr *> getDeclRefExprs(clang::Expr *E);
-  void addDefUse(clang::DeclRefExpr *DRE, std::set<clang::Decl *> &DU,
-                 std::set<clang::DeclRefExpr *> Cache);
-  void removeUnusedVariables();
-  bool isConstant(clang::Expr *E);
+  clang::SourceRange getRemoveRange(clang::SourceLocation Loc);
+  bool isConstant(clang::Stmt *S);
 
   DeadcodeElementCollectionVisitor *CollectionVisitor;
 };
@@ -38,11 +35,16 @@ class DeadcodeElementCollectionVisitor
 public:
   DeadcodeElementCollectionVisitor(DeadcodeElimination *R) : Consumer(R) {}
 
-  bool VisitDeclRefExpr(clang::DeclRefExpr *DRE);
   bool VisitVarDecl(clang::VarDecl *VD);
+  bool VisitLabelStmt(clang::LabelStmt *LS);
 
 private:
   DeadcodeElimination *Consumer;
+};
+
+class DCEFrontend {
+public:
+  static bool Parse(std::string &Filename, DeadcodeElimination *R);
 };
 
 #endif // DEADCODE_ELIMINATION_H

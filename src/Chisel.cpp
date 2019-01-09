@@ -1,8 +1,3 @@
-#include <string>
-
-#include <spdlog/sinks/stdout_sinks.h>
-#include <spdlog/spdlog.h>
-
 #include "DeadcodeElimination.h"
 #include "FileManager.h"
 #include "Frontend.h"
@@ -14,6 +9,11 @@
 #include "Reformat.h"
 #include "Report.h"
 #include "StatsManager.h"
+
+#include <spdlog/sinks/stdout_sinks.h>
+#include <spdlog/spdlog.h>
+
+#include <string>
 
 void initialize() {
   auto Logger = spdlog::stdout_logger_mt("Logger");
@@ -54,8 +54,8 @@ int main(int argc, char *argv[]) {
     wc0 = wc;
 
     if (!OptionManager::SkipDCE) {
-      Transformation *DCE = new DeadcodeElimination();
-      Frontend::Parse(OptionManager::InputFile, DCE);
+      DeadcodeElimination *DCE = new DeadcodeElimination();
+      DCEFrontend::Parse(OptionManager::InputFile, DCE);
     }
     if (!OptionManager::SkipGlobal) {
       llvm::outs() << "Start global reduction\n";
