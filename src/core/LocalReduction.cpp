@@ -323,23 +323,24 @@ void LocalReduction::reduceSwitch(SwitchStmt *SS) {
   int SelectedCase = -1;
   for (int I = 0; I < Cases.size(); I++) {
     DDElementVector V = {Cases[I]};
-    if (!isInvalidChunk(V)) {
-      SourceLocation CurrPoint = Cases[I]->getKeywordLoc().getLocWithOffset(-1);
-      removeSourceText(InitialPoint, CurrPoint);
-      if (I != Cases.size() - 1) {
-        SourceLocation NextPoint = Cases[I + 1]->getKeywordLoc();
-        removeSourceText(NextPoint, EndSwitch.getLocWithOffset(-1));
-      }
+    if (isInvalidChunk(V))
+      continue;
+
+    SourceLocation CurrPoint = Cases[I]->getKeywordLoc().getLocWithOffset(-1);
+    removeSourceText(InitialPoint, CurrPoint);
+    if (I != Cases.size() - 1) {
+      SourceLocation NextPoint = Cases[I + 1]->getKeywordLoc();
+      removeSourceText(NextPoint, EndSwitch.getLocWithOffset(-1));
+    }
+    TheRewriter.overwriteChangedFiles();
+    if (callOracle()) {
+      Queue.push(Cases[I]);
+      SelectedCase = I;
+      break;
+    } else {
+      TheRewriter.ReplaceText(SourceRange(BeginSwitch, EndSwitch), Revert);
       TheRewriter.overwriteChangedFiles();
-      if (callOracle()) {
-        Queue.push(Cases[I]);
-        SelectedCase = I;
-        break;
-      } else {
-        TheRewriter.ReplaceText(SourceRange(BeginSwitch, EndSwitch), Revert);
-        TheRewriter.overwriteChangedFiles();
-        Queue.push(Body);
-      }
+      Queue.push(Body);
     }
   }
   std::set<clang::Stmt *> RemovedStmts;
@@ -372,12 +373,30 @@ void LocalReduction::reduceIf(IfStmt *IS) {
       return;
 
     DDElementVector V = {IS->getCond(), IS->getElse()};
-    if (!isInvalidChunk(V)) {
-      removeSourceText(BeginIf, EndCond);
-      removeSourceText(ElseLoc, EndIf);
+    if (isInvalidChunk(V))
+      return;
+
+    removeSourceText(BeginIf, EndCond);
+    removeSourceText(ElseLoc, EndIf);
+    TheRewriter.overwriteChangedFiles();
+    if (callOracle()) {
+      Queue.push(IS->getThen());
+      for (auto C : V) {
+        auto Children = getAllChildren(C.get<Stmt *>());
+        RemovedElements.insert(Children.begin(), Children.end());
+      }
+    } else {
+      TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
+      TheRewriter.overwriteChangedFiles();
+
+      DDElementVector V = {IS->getCond(), IS->getThen()};
+      if (isInvalidChunk(V))
+        return;
+
+      removeSourceText(BeginIf, ElseLoc.getLocWithOffset(3));
       TheRewriter.overwriteChangedFiles();
       if (callOracle()) {
-        Queue.push(IS->getThen());
+        Queue.push(IS->getElse());
         for (auto C : V) {
           auto Children = getAllChildren(C.get<Stmt *>());
           RemovedElements.insert(Children.begin(), Children.end());
@@ -385,42 +404,27 @@ void LocalReduction::reduceIf(IfStmt *IS) {
       } else {
         TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
         TheRewriter.overwriteChangedFiles();
-
-        DDElementVector V = {IS->getCond(), IS->getThen()};
-        if (!isInvalidChunk(V)) {
-          removeSourceText(BeginIf, ElseLoc.getLocWithOffset(3));
-          TheRewriter.overwriteChangedFiles();
-          if (callOracle()) {
-            Queue.push(IS->getElse());
-            for (auto C : V) {
-              auto Children = getAllChildren(C.get<Stmt *>());
-              RemovedElements.insert(Children.begin(), Children.end());
-            }
-          } else {
-            TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
-            TheRewriter.overwriteChangedFiles();
-            Queue.push(IS->getThen());
-            Queue.push(IS->getElse());
-          }
-        }
+        Queue.push(IS->getThen());
+        Queue.push(IS->getElse());
       }
     }
   } else {
     DDElementVector V = {IS->getCond()};
-    if (!isInvalidChunk(V)) {
-      removeSourceText(BeginIf, EndCond);
-      TheRewriter.overwriteChangedFiles();
-      if (callOracle()) {
-        Queue.push(IS->getThen());
-        for (auto C : V) {
-          auto Children = getAllChildren(C.get<Stmt *>());
-          RemovedElements.insert(Children.begin(), Children.end());
-        }
-      } else {
-        TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
-        TheRewriter.overwriteChangedFiles();
-        Queue.push(IS->getThen());
+    if (isInvalidChunk(V))
+      return;
+
+    removeSourceText(BeginIf, EndCond);
+    TheRewriter.overwriteChangedFiles();
+    if (callOracle()) {
+      Queue.push(IS->getThen());
+      for (auto C : V) {
+        auto Children = getAllChildren(C.get<Stmt *>());
+        RemovedElements.insert(Children.begin(), Children.end());
       }
+    } else {
+      TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
+      TheRewriter.overwriteChangedFiles();
+      Queue.push(IS->getThen());
     }
   }
 }
@@ -438,20 +442,21 @@ void LocalReduction::reduceFor(ForStmt *FS) {
     V.emplace_back(FS->getInit());
   if (FS->getInc())
     V.emplace_back(FS->getInc());
-  if (!isInvalidChunk(V)) {
-    removeSourceText(BeginFor, EndCond);
-    TheRewriter.overwriteChangedFiles();
-    if (callOracle()) {
-      Queue.push(Body);
-      for (auto C : V) {
-        auto Children = getAllChildren(C.get<Stmt *>());
-        RemovedElements.insert(Children.begin(), Children.end());
-      }
-    } else {
-      TheRewriter.ReplaceText(SourceRange(BeginFor, EndFor), Revert);
-      TheRewriter.overwriteChangedFiles();
-      Queue.push(Body);
+  if (isInvalidChunk(V))
+    return;
+
+  removeSourceText(BeginFor, EndCond);
+  TheRewriter.overwriteChangedFiles();
+  if (callOracle()) {
+    Queue.push(Body);
+    for (auto C : V) {
+      auto Children = getAllChildren(C.get<Stmt *>());
+      RemovedElements.insert(Children.begin(), Children.end());
     }
+  } else {
+    TheRewriter.ReplaceText(SourceRange(BeginFor, EndFor), Revert);
+    TheRewriter.overwriteChangedFiles();
+    Queue.push(Body);
   }
 }
 
@@ -465,20 +470,21 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
   llvm::StringRef Revert = getSourceText(BeginWhile, EndWhile);
 
   DDElementVector V = {WS->getCond()};
-  if (!isInvalidChunk(V)) {
-    removeSourceText(BeginWhile, EndCond);
-    TheRewriter.overwriteChangedFiles();
-    if (callOracle()) {
-      Queue.push(Body);
-      for (auto C : V) {
-        auto Children = getAllChildren(C.get<Stmt *>());
-        RemovedElements.insert(Children.begin(), Children.end());
-      }
-    } else {
-      TheRewriter.ReplaceText(SourceRange(BeginWhile, EndWhile), Revert);
-      TheRewriter.overwriteChangedFiles();
-      Queue.push(Body);
+  if (isInvalidChunk(V))
+    return;
+
+  removeSourceText(BeginWhile, EndCond);
+  TheRewriter.overwriteChangedFiles();
+  if (callOracle()) {
+    Queue.push(Body);
+    for (auto C : V) {
+      auto Children = getAllChildren(C.get<Stmt *>());
+      RemovedElements.insert(Children.begin(), Children.end());
     }
+  } else {
+    TheRewriter.ReplaceText(SourceRange(BeginWhile, EndWhile), Revert);
+    TheRewriter.overwriteChangedFiles();
+    Queue.push(Body);
   }
 }
 
@@ -492,21 +498,22 @@ void LocalReduction::reduceDoWhile(DoStmt *DS) {
   llvm::StringRef Revert = getSourceText(BeginDo, EndDo);
 
   DDElementVector V = {DS->getCond()};
-  if (!isInvalidChunk(V)) {
-    removeSourceText(BeginDo, BeginDo.getLocWithOffset(1));
-    removeSourceText(DS->getWhileLoc(), EndDo);
-    TheRewriter.overwriteChangedFiles();
-    if (callOracle()) {
-      Queue.push(Body);
-      for (auto C : V) {
-        auto Children = getAllChildren(C.get<Stmt *>());
-        RemovedElements.insert(Children.begin(), Children.end());
-      }
-    } else {
-      TheRewriter.ReplaceText(SourceRange(BeginDo, EndDo), Revert);
-      TheRewriter.overwriteChangedFiles();
-      Queue.push(Body);
+  if (isInvalidChunk(V))
+    return;
+
+  removeSourceText(BeginDo, BeginDo.getLocWithOffset(1));
+  removeSourceText(DS->getWhileLoc(), EndDo);
+  TheRewriter.overwriteChangedFiles();
+  if (callOracle()) {
+    Queue.push(Body);
+    for (auto C : V) {
+      auto Children = getAllChildren(C.get<Stmt *>());
+      RemovedElements.insert(Children.begin(), Children.end());
     }
+  } else {
+    TheRewriter.ReplaceText(SourceRange(BeginDo, EndDo), Revert);
+    TheRewriter.overwriteChangedFiles();
+    Queue.push(Body);
   }
 }
 
