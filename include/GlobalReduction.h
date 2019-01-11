@@ -29,8 +29,7 @@ private:
   void filterElements(DDElementVector &Vec);
 
   std::vector<clang::Decl *> Decls;
-  std::map<clang::Decl *, std::vector<clang::DeclRefExpr *>> UseInfo;
-
+  std::map<clang::Decl *, bool> UseInfo;
   GlobalElementCollectionVisitor *CollectionVisitor;
 };
 
@@ -40,10 +39,7 @@ public:
   GlobalElementCollectionVisitor(GlobalReduction *R) : Consumer(R) {}
 
   bool VisitDeclRefExpr(clang::DeclRefExpr *DRE);
-  bool VisitEnumDecl(clang::EnumDecl *ED);
   bool VisitFunctionDecl(clang::FunctionDecl *FD);
-  bool VisitRecordDecl(clang::RecordDecl *RD);
-  bool VisitTypedefDecl(clang::TypedefDecl *TD);
   bool VisitVarDecl(clang::VarDecl *VD);
   bool VisitEmptyDecl(clang::EmptyDecl *ED);
 
