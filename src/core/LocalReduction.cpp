@@ -357,8 +357,7 @@ void LocalReduction::reduceSwitch(SwitchStmt *SS) {
 void LocalReduction::reduceIf(IfStmt *IS) {
   SourceLocation BeginIf = IS->getSourceRange().getBegin();
   SourceLocation EndIf = getEndOfStmt(IS);
-  SourceLocation EndCond =
-      getEndLocationUntil(IS->getCond()->getSourceRange().getEnd(), ')');
+  SourceLocation EndCond = getEndOfCond(IS->getCond());
   SourceLocation EndThen = getEndOfStmt(IS->getThen());
 
   if (BeginIf.isInvalid() || EndIf.isInvalid() || EndCond.isInvalid() ||
@@ -433,8 +432,7 @@ void LocalReduction::reduceFor(ForStmt *FS) {
   auto Body = FS->getBody();
   SourceLocation BeginFor = FS->getSourceRange().getBegin();
   SourceLocation EndFor = getEndOfStmt(FS);
-  SourceLocation EndCond =
-      getEndLocationUntil(FS->getCond()->getSourceRange().getEnd(), ')');
+  SourceLocation EndCond = FS->getRParenLoc();
 
   llvm::StringRef Revert = getSourceText(BeginFor, EndFor);
   DDElementVector V = {FS->getCond()};
@@ -464,8 +462,7 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
   auto Body = WS->getBody();
   SourceLocation BeginWhile = WS->getSourceRange().getBegin();
   SourceLocation EndWhile = getEndOfStmt(WS);
-  SourceLocation EndCond =
-      getEndLocationUntil(WS->getCond()->getSourceRange().getEnd(), ')');
+  SourceLocation EndCond = getEndOfCond(WS->getCond());
 
   llvm::StringRef Revert = getSourceText(BeginWhile, EndWhile);
 
@@ -492,8 +489,7 @@ void LocalReduction::reduceDoWhile(DoStmt *DS) {
   auto Body = DS->getBody();
   SourceLocation BeginDo = DS->getSourceRange().getBegin();
   SourceLocation EndDo = getEndOfStmt(DS);
-  SourceLocation EndCond =
-      getEndLocationUntil(DS->getCond()->getSourceRange().getEnd(), ')');
+  SourceLocation EndCond = getEndOfCond(DS->getCond());
 
   llvm::StringRef Revert = getSourceText(BeginDo, EndDo);
 

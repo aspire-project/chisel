@@ -25,6 +25,14 @@ std::vector<clang::Stmt *> Transformation::getAllChildren(clang::Stmt *S) {
   return AllChildren;
 }
 
+clang::SourceLocation Transformation::getEndOfCond(clang::Expr *E) {
+  const clang::SourceManager &SM = Context->getSourceManager();
+  return clang::Lexer::findLocationAfterToken(E->getLocEnd(),
+                                              clang::tok::r_paren, SM,
+                                              clang::LangOptions(), false)
+      .getLocWithOffset(-1);
+}
+
 clang::SourceLocation Transformation::getEndOfStmt(clang::Stmt *S) {
   if (clang::NullStmt *NS = llvm::dyn_cast<clang::NullStmt>(S))
     return NS->getSemiLoc();
