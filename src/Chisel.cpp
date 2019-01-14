@@ -1,3 +1,8 @@
+#include <string>
+
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_sinks.h>
+
 #include "DeadcodeElimination.h"
 #include "FileManager.h"
 #include "Frontend.h"
@@ -9,11 +14,6 @@
 #include "Reformat.h"
 #include "Report.h"
 #include "StatsManager.h"
-
-#include <spdlog/sinks/stdout_sinks.h>
-#include <spdlog/spdlog.h>
-
-#include <string>
 
 void initialize() {
   auto Logger = spdlog::stdout_logger_mt("Logger");
