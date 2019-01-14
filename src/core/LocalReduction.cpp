@@ -98,6 +98,10 @@ bool LocalReduction::test(DDElementVector &ToBeRemoved) {
   }
   TheRewriter.overwriteChangedFiles();
   if (callOracle()) {
+    for (auto &E : ToBeRemoved) {
+      auto Children = getAllChildren(E.get<Stmt*>());
+      RemovedElements.insert(Children.begin(), Children.end());
+    }
     return true;
   } else {
     for (int i = 0; i < Reverts.size(); i++)
@@ -497,10 +501,6 @@ void LocalReduction::reduceCompound(CompoundStmt *CS) {
   for (auto S : Stmts) {
     if (Removed.find(S) == Removed.end())
       Queue.push(S);
-  }
-  for (auto S : Removed) {
-    auto Children = getAllChildren(S.get<clang::Stmt *>());
-    RemovedElements.insert(Children.begin(), Children.end());
   }
 }
 

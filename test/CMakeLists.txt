@@ -152,3 +152,9 @@ add_test(
   COMMAND ./test.sh dce2
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
 )
+
+add_test(
+  NAME label0
+  COMMAND ./test.sh label0
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)
