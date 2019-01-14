@@ -13,6 +13,7 @@ using DDElementVector = std::vector<DDElement>;
 
 class ProbabilisticModel {
 public:
+  ProbabilisticModel() : MyDecisionTree(2) {}
   void initialize(DDElementVector &Source);
   void clear();
   void train(int Iteration);

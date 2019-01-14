@@ -14,8 +14,8 @@ void ProbabilisticModel::initialize(DDElementVector &Source) {
   if (OptionManager::SkipLearning)
     return;
   clear();
-  DDElementVector EmptyVector;
-  addForTraining(Source, EmptyVector, true);
+  TrainingSet = arma::mat(Source.size(), 1, arma::fill::ones);
+  TrainingLabels = arma::Row<size_t>(1, arma::fill::zeros);
 }
 
 void ProbabilisticModel::clear() {
@@ -33,17 +33,9 @@ void ProbabilisticModel::train(int Iteration) {
       !(Iteration > 100 && Iteration % (Iteration / 100 + 1) != 0);
   if ((!OptionManager::SkipDelayLearning && ShouldTrain) ||
       OptionManager::SkipDelayLearning) {
-    arma::mat TransTrainingSet = trans(TrainingSet);
-    MyDecisionTree.Train<>(TransTrainingSet, TrainingLabels, 2, 1);
+    MyDecisionTree.Train(TrainingSet, TrainingLabels, 2, 1);
   }
   Profiler::GetInstance()->endLearning();
-}
-
-void ProbabilisticModel::printVector(arma::mat FeatureVector, bool Label) {
-  for (int i = 0; i < FeatureVector.n_cols; i++)
-    llvm::outs() << "[" << FeatureVector[0, i] << "]";
-  llvm::outs() << ": " << Label;
-  llvm::outs() << "\n";
 }
 
 void ProbabilisticModel::addForTraining(DDElementVector &Source,
@@ -52,7 +44,8 @@ void ProbabilisticModel::addForTraining(DDElementVector &Source,
     return;
   Profiler::GetInstance()->beginLearning();
   arma::mat Diff = createFeatureVector(Source, Chunk);
-  TrainingSet = join_cols(TrainingSet, Diff);
+  TrainingSet.resize(TrainingSet.n_rows, TrainingSet.n_cols + 1);
+  TrainingSet.col(TrainingSet.n_cols - 1) = Diff;
   TrainingLabels.resize(TrainingLabels.n_elem + 1);
   TrainingLabels(TrainingLabels.n_elem - 1) = Label ? 0 : 1;
   Profiler::GetInstance()->endLearning();
@@ -64,13 +57,16 @@ ProbabilisticModel::sortCandidates(DDElementVector &Source,
   arma::uvec EmptyVector;
   if (OptionManager::SkipLearning)
     return EmptyVector;
+  if (Source.size() == 0 || Chunks.size() == 0)
+    return EmptyVector;
   Profiler::GetInstance()->beginLearning();
-  arma::mat Data, Probabilities;
-  for (auto Chunk : Chunks)
-    Data = join_cols(Data, createFeatureVector(Source, Chunk));
+  arma::mat Probabilities;
   arma::Row<size_t> Predictions;
-  arma::mat TestData = trans(Data);
-  MyDecisionTree.Classify<>(TestData, Predictions, Probabilities);
+
+  arma::mat Data(Source.size(), Chunks.size(), arma::fill::ones);
+  for (int I = 0; I < Chunks.size(); I++)
+    Data.col(I) = createFeatureVector(Source, Chunks[I]);
+  MyDecisionTree.Classify(Data, Predictions, Probabilities);
   arma::uvec SortedIndex = sort_index(Probabilities.row(0), "descend");
   if (Chunks.size() == Source.size() || Chunks.size() == Source.size() - 1)
     return SortedIndex;
@@ -81,14 +77,16 @@ ProbabilisticModel::sortCandidates(DDElementVector &Source,
 arma::mat ProbabilisticModel::createFeatureVector(DDElementVector &Source,
                                                   DDElementVector &Chunk) {
   if (Chunk.size() == 0)
-    return arma::ones(1, Source.size());
+    return arma::ones(Source.size(), 1);
 
-  arma::mat Result = arma::zeros(1, Source.size());
+  arma::mat Result(Source.size(), 1, arma::fill::zeros);
   for (auto C : Chunk) {
+    if (C.isNull())
+      continue;
     auto It = std::find(Source.begin(), Source.end(), C);
-    if (It != std::end(Chunk)) {
+    if (It != std::end(Source)) {
       int Index = std::distance(Source.begin(), It);
-      Result(0, Index) = 1;
+      Result(Index, 0) = 1;
     }
   }
   return Result;
