@@ -34,7 +34,7 @@ void ProbabilisticModel::train(int Iteration) {
   if ((!OptionManager::SkipDelayLearning && ShouldTrain) ||
       OptionManager::SkipDelayLearning) {
     arma::mat TransTrainingSet = trans(TrainingSet);
-    MyDecisionTree.Train<>(TransTrainingSet, TrainingLabels, 2, 1, 1e-6);
+    MyDecisionTree.Train<>(TransTrainingSet, TrainingLabels, 2, 1);
   }
   Profiler::GetInstance()->endLearning();
 }
