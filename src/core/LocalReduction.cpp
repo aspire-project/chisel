@@ -99,7 +99,7 @@ bool LocalReduction::test(DDElementVector &ToBeRemoved) {
   TheRewriter.overwriteChangedFiles();
   if (callOracle()) {
     for (auto &E : ToBeRemoved) {
-      auto Children = getAllChildren(E.get<Stmt*>());
+      auto Children = getAllChildren(E.get<Stmt *>());
       RemovedElements.insert(Children.begin(), Children.end());
     }
     return true;
@@ -162,11 +162,14 @@ std::vector<DeclRefExpr *> LocalReduction::getDeclRefExprs(Expr *E) {
   }
   return result;
 }
-
 void LocalReduction::addDefUse(DeclRefExpr *DRE, std::set<Decl *> &DU) {
-  if (VarDecl *VD = llvm::dyn_cast<VarDecl>(DRE->getDecl()))
-    if (VD->isLocalVarDeclOrParm())
+  if (VarDecl *VD = llvm::dyn_cast<VarDecl>(DRE->getDecl())) {
+    if (auto T = llvm::dyn_cast_or_null<clang::ConstantArrayType>(
+            VD->getType().getTypePtr()))
+      return;
+    if (VD->isLocalVarDeclOrParm() || VD->isStaticLocal())
       DU.insert(DRE->getDecl());
+  }
 }
 
 bool LocalReduction::brokenDependency(std::set<Stmt *> &Remaining) {
