@@ -2,8 +2,9 @@
 
 ## Requirements
 * CMake >= 3.11
-* Clang and LibClang >= 4.0
+* Clang and LibClang >= 7.0
 * mlpack >= 2.0
+* spdlog
 
 ## Installation
 ### Installing Dependencies
@@ -23,6 +24,11 @@ Make sure to add Chisel to the PATH:
 $ export PATH=[chisel directory]/build/bin:$PATH
 ```
 
+For ensuring that everything is working properly, run the following command:
+```sh
+make test
+```
+
 ## Quick Start
 After building the project run the below command:
 ```sh
@@ -31,10 +37,3 @@ $ chisel ./test.sh file.c
 where `file.c` is a C program that you aim to reduce, and `test.sh` is
 the property testing script that returns `0` in a successful call.
 The reduced program is saved in `file.c.chisel.c` by default.
-
-For running Chisel on each of the examples provided under `examples/`, copy the original c program specified by
-`[filename].orig.c` to [filename], and run Chisel using the provided test script. For instance, in `examples/loop` directory,
-```sh
-$ cp loop.c.orig.c loop.c
-$ chisel ./test.sh loop.c
-```
