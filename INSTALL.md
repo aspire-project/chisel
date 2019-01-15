@@ -1,9 +1,7 @@
 # Installing Dependencies
 ## Linux
 ```sh
-$ apt-get install clang libclang-dev llvm-dev cmake
-$ apt-get install libspdlog-dev nlohmann-json-dev
-$ apt-get install libmlpack-dev
+$ apt-get install clang libclang-dev llvm-dev cmake libspdlog-dev libmlpack-dev
 ```
 ## macOS
 If you use [Homebrew](https://brew.sh):
@@ -15,7 +13,6 @@ $ mkdir build && cd build
 $ cmake ..
 $ make
 $ make install
-
 $ brew install spdlog
 ```
 
