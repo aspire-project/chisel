@@ -12,5 +12,5 @@ build/
 # vim swap files
 .*.sw?
 
-# Mac OSX speficif files
+# Mac OSX specific files
 .DS_store
