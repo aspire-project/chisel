@@ -517,6 +517,8 @@ void LocalReduction::filterElements(std::vector<clang::Stmt *> &Vec) {
     clang::Stmt *S = *I;
     if (DeclStmt *DS = llvm::dyn_cast<DeclStmt>(S))
       Vec.erase(I);
+    else if (clang::NullStmt *NS = llvm::dyn_cast<clang::NullStmt>(S))
+      Vec.erase(I);
     else
       I++;
   }
