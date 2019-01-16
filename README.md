@@ -1,4 +1,4 @@
-# Chisel
+# Chisel [![CircleCI](https://circleci.com/gh/aspire-project/chisel.svg?style=svg)](https://circleci.com/gh/aspire-project/chisel)
 
 ## Requirements
 * CMake >= 3.11
