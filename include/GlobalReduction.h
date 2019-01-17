@@ -9,6 +9,9 @@
 
 class GlobalElementCollectionVisitor;
 
+/// \brief Represents a global reduction phase
+///
+/// In global reduction phase, global declarations are reduced.
 class GlobalReduction : public Reduction {
   friend class GlobalElementCollectionVisitor;
 

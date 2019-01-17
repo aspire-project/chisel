@@ -11,6 +11,7 @@
 using DDElement = llvm::PointerUnion<clang::Decl *, clang::Stmt *>;
 using DDElementVector = std::vector<DDElement>;
 
+/// \brief Represents the probabilistic model that is utilized in the reduction phase
 class ProbabilisticModel {
 public:
   ProbabilisticModel() : MyDecisionTree(2) {}

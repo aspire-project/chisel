@@ -7,6 +7,7 @@
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/AST/Stmt.h"
 
+/// \brief Responsible for computing statistical information for a file
 class StatsManager {
 public:
   static void ComputeStats(std::string &FileName);

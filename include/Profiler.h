@@ -3,6 +3,7 @@
 
 #include "llvm/Support/Timer.h"
 
+/// \brief Keeps track of performance information that is used in preparing the report
 class Profiler {
 public:
   static void Initialize();

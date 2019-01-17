@@ -3,6 +3,7 @@
 
 #include <string>
 
+/// \brief Wrapper for low-level file manipulations
 class FileManager {
 public:
   static void Initialize();

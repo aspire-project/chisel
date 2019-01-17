@@ -3,6 +3,7 @@
 
 #include <string>
 
+/// \brief Manages and processes all the command-line options that are passed to Chisel
 class OptionManager {
 public:
   static std::string InputFile;

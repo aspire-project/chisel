@@ -6,6 +6,7 @@
 
 #include "Transformation.h"
 
+/// \brief Represents a reformatting action
 class Reformat : public Transformation {
 public:
   Reformat() {}

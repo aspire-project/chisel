@@ -5,6 +5,7 @@
 
 #include <string>
 
+/// \brief Provides an independent frontend for any action on AST
 class Frontend {
 public:
   static bool Parse(std::string &FileName, clang::ASTConsumer *C);

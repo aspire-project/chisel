@@ -10,6 +10,7 @@ using DDElement = llvm::PointerUnion<clang::Decl *, clang::Stmt *>;
 using DDElementVector = std::vector<DDElement>;
 using DDElementSet = std::set<DDElement>;
 
+/// \brief Represents a general reduction step
 class Reduction : public Transformation {
 public:
   Reduction() {}

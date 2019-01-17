@@ -10,6 +10,10 @@
 
 class DeadcodeElementCollectionVisitor;
 
+/// \brief Represents a sound dead-code elimination phase
+///
+/// DeadcodeElimination removes unused statements without calling the oracle,
+/// and removes unused labels and unused variable declarations that are side-effect free.
 class DeadcodeElimination : public Transformation {
   friend class LocalElementCollectionVisitor;
 

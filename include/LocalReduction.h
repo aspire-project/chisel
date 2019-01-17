@@ -10,6 +10,10 @@
 
 class LocalElementCollectionVisitor;
 
+/// \brief Represents a local reduction phase
+///
+/// In local reduction phase, local statements are reduced
+/// hierarchically with respect to AST.
 class LocalReduction : public Reduction {
   friend class LocalElementCollectionVisitor;
 

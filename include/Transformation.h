@@ -6,6 +6,7 @@
 #include "clang/AST/Expr.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 
+/// \brief Represesnts a transformation action on an AST
 class Transformation : public clang::ASTConsumer {
 public:
   Transformation() {}
