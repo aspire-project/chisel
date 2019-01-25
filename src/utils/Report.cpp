@@ -1,5 +1,7 @@
 #include "Report.h"
 
+#include <spdlog/spdlog.h>
+
 #include "llvm/Support/Format.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -16,63 +18,45 @@ void Report::print() {
   const char *RightColFmt = "%21.1f";
   std::string Bar(TotalWidth, '=');
 
-
-
-  llvm::outs() << Bar << "\n"
-               << llvm::center_justify("Report", TotalWidth) << "\n"
-               << Bar << "\n"
-               << llvm::right_justify("Total Time :", LeftColWidth)
-               << llvm::format(RightColFmt,
-                               Prof->getChiselTimeRecord().getWallTime())
-               << " s\n"
-               << llvm::right_justify("Oracle Time :", LeftColWidth)
-               << llvm::format(RightColFmt,
-                               Prof->getOracleTimeRecord().getWallTime())
-               << " s\n";
+  spdlog::get("Logger")->info(Bar);
+  spdlog::get("Logger")->info("{:^52}", "Report");
+  spdlog::get("Logger")->info(Bar);
+  spdlog::get("Logger")->info("{:>25}{:>21.1f}s", "Total Time :",
+                              Prof->getChiselTimeRecord().getWallTime());
+  spdlog::get("Logger")->info("{:>25}{:>21.1f}s", "Oracle Time :",
+                              Prof->getOracleTimeRecord().getWallTime());
   if (!OptionManager::SkipLearning) {
-    llvm::outs() << llvm::right_justify("Learning Time :", LeftColWidth)
-                 << llvm::format(RightColFmt,
-                                 Prof->getLearningTimeRecord().getWallTime())
-                 << " s\n";
+    spdlog::get("Logger")->info("{:>25}{:>21.1f}s", "Learning Time :",
+                                Prof->getLearningTimeRecord().getWallTime());
   }
   if (!OptionManager::SkipGlobal) {
     int Ratio = Prof->getGlobalReductionCounter()
                     ? Prof->getSuccessfulGlobalReductionCounter() * 100 /
                           Prof->getGlobalReductionCounter()
                     : 0;
-    llvm::outs() << llvm::right_justify("Global Success Ratio :", LeftColWidth)
-                 << llvm::format("%5d%%", Ratio) << "  "
-                 << llvm::format("(%5d",
-                                 Prof->getSuccessfulGlobalReductionCounter())
-                 << " / "
-                 << llvm::format("%5d)", Prof->getGlobalReductionCounter())
-                 << "\n";
+    spdlog::get("Logger")->info("{:>25}{:>5}% ({:>5} / {:>5})",
+                                "Global Success Ratio :", Ratio,
+                                Prof->getSuccessfulGlobalReductionCounter(),
+                                Prof->getGlobalReductionCounter());
   }
   if (!OptionManager::SkipLocal) {
     int Ratio = Prof->getLocalReductionCounter()
                     ? Prof->getSuccessfulLocalReductionCounter() * 100 /
                           Prof->getLocalReductionCounter()
                     : 0;
-    llvm::outs() << llvm::right_justify("Local Success Ratio :", LeftColWidth)
-                 << llvm::format("%5d%%", Ratio) << "  "
-                 << llvm::format("(%5d",
-                                 Prof->getSuccessfulLocalReductionCounter())
-                 << " / "
-                 << llvm::format("%5d)", Prof->getLocalReductionCounter())
-                 << "\n";
+    spdlog::get("Logger")->info("{:>25}{:>5}% ({:>5} / {:>5})",
+                                "Local Success Ratio :", Ratio,
+                                Prof->getSuccessfulLocalReductionCounter(),
+                                Prof->getLocalReductionCounter());
   }
   StatsManager::ComputeStats(FileManager::GetInstance()->getOriginFilePath());
-  llvm::outs() << llvm::right_justify("#Functions (Original) :", LeftColWidth)
-               << llvm::format("%23d", StatsManager::GetNumOfFunctions())
-               << "\n";
-  llvm::outs() << llvm::right_justify("#Statements (Original) :", LeftColWidth)
-               << llvm::format("%23d", StatsManager::GetNumOfStatements())
-               << "\n";
+  spdlog::get("Logger")->info("{:>25}{:>22}", "#Functions (Original) :",
+                              StatsManager::GetNumOfFunctions());
+  spdlog::get("Logger")->info("{:>25}{:>22}", "#Statements (Original) :",
+                              StatsManager::GetNumOfStatements());
   StatsManager::ComputeStats(OptionManager::InputFile);
-  llvm::outs() << llvm::right_justify("#Functions (Reduced) :", LeftColWidth)
-               << llvm::format("%23d", StatsManager::GetNumOfFunctions())
-               << "\n";
-  llvm::outs() << llvm::right_justify("#Statements (Reduced) :", LeftColWidth)
-               << llvm::format("%23d", StatsManager::GetNumOfStatements())
-               << "\n";
+  spdlog::get("Logger")->info("{:>25}{:>22}", "#Functions (Reduced) :",
+                              StatsManager::GetNumOfFunctions());
+  spdlog::get("Logger")->info("{:>25}{:>22}", "#Statements (Reduced) :",
+                              StatsManager::GetNumOfStatements());
 }

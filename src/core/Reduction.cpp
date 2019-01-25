@@ -1,6 +1,7 @@
 #include "Reduction.h"
 
 #include <algorithm>
+#include <spdlog/spdlog.h>
 
 #include "clang/Basic/SourceManager.h"
 #include "llvm/Support/Program.h"
@@ -81,12 +82,10 @@ DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
 
   int ChunkSize = (DeclsCopy.size() + 1) / 2;
   int Iteration = 0;
-  while (DeclsCopy.size() > 0) {
-    std::string FormatStr =
-        "%" + std::to_string(std::to_string(DeclsCopy.size()).length()) + "d";
-    llvm::outs() << "\rRunning delta debugging - Size: "
-                 << llvm::format(FormatStr.c_str(), DeclsCopy.size());
+  spdlog::get("Logger")->info("Running delta debugging - Size: {}",
+                              DeclsCopy.size());
 
+  while (DeclsCopy.size() > 0) {
     bool Success = false;
     TheModel.train(Iteration);
     auto Targets = getCandidates(DeclsCopy, ChunkSize);
@@ -112,6 +111,7 @@ DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
       }
     }
     if (Success) {
+      spdlog::get("Logger")->info("Reduced - Size: {}", DeclsCopy.size());
       ChunkSize = (DeclsCopy.size() + 1) / 2;
     } else {
       if (ChunkSize == 1)
@@ -119,7 +119,5 @@ DDElementSet Reduction::doDeltaDebugging(DDElementVector &Decls) {
       ChunkSize = (ChunkSize + 1) / 2;
     }
   }
-  llvm::outs() << "\n";
-
   return Removed;
 }

@@ -182,10 +182,6 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
     if (OptionManager::OutputFile == "") {
       OptionManager::OutputFile = OptionManager::InputFile + ".chisel.c";
     }
-
-    llvm::outs() << "Oracle: " << OptionManager::OracleFile << "\n";
-    llvm::outs() << "Input: " << OptionManager::InputFile << "\n";
-    llvm::outs() << "Output Directory: " << OutputDir << "\n";
   } else {
     OptionManager::InputFile = std::string(argv[optind]);
 

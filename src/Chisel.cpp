@@ -2,6 +2,7 @@
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_sinks.h>
+#include <spdlog/sinks/basic_file_sink.h>
 
 #include "DeadcodeElimination.h"
 #include "FileManager.h"
@@ -16,15 +17,28 @@
 #include "StatsManager.h"
 
 void initialize() {
-  auto Logger = spdlog::stdout_logger_mt("Logger");
+  FileManager::Initialize();
+
+  auto ConsolSink = std::make_shared<spdlog::sinks::stdout_sink_mt>();
+  auto FileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(
+      OptionManager::OutputDir + "/log.txt", true);
+  auto Logger = std::make_shared<spdlog::logger>(
+      "Logger", spdlog::sinks_init_list{ConsolSink, FileSink});
+  ConsolSink->set_pattern("%v");
   if (OptionManager::Debug) {
+    ConsolSink->set_level(spdlog::level::debug);
+    FileSink->set_level(spdlog::level::debug);
     Logger->set_level(spdlog::level::debug);
   } else {
+    ConsolSink->set_level(spdlog::level::info);
+    FileSink->set_level(spdlog::level::info);
     Logger->set_level(spdlog::level::info);
   }
-
-  FileManager::Initialize();
+  spdlog::register_logger(Logger);
   Profiler::Initialize();
+  spdlog::get("Logger")->info("Oracle: {}", OptionManager::OracleFile);
+  spdlog::get("Logger")->info("Input: {}", OptionManager::InputFile);
+  spdlog::get("Logger")->info("Output Directory: {}", OptionManager::OutputDir);
 }
 
 void finalize() {
@@ -50,7 +64,7 @@ int main(int argc, char *argv[]) {
   int Iteration = 0;
   while (wc < wc0) {
     Iteration++;
-    llvm::outs() << "Iteration " << Iteration << " (Word: " << wc << ")\n";
+    spdlog::get("Logger")->info("Iteration {} (Word: {})", Iteration, wc);
     wc0 = wc;
 
     if (!OptionManager::SkipDCE) {
@@ -58,16 +72,14 @@ int main(int argc, char *argv[]) {
       DCEFrontend::Parse(OptionManager::InputFile, DCE);
     }
     if (!OptionManager::SkipGlobal) {
-      llvm::outs() << "Start global reduction\n";
+      spdlog::get("Logger")->info("Start global reduction");
       Reduction *GR = new GlobalReduction();
       Frontend::Parse(OptionManager::InputFile, GR);
-      llvm::outs() << "\n";
     }
     if (!OptionManager::SkipLocal) {
-      llvm::outs() << "Start local reduction\n";
+      spdlog::get("Logger")->info("Start local reduction");
       Reduction *LR = new LocalReduction();
       Frontend::Parse(OptionManager::InputFile, LR);
-      llvm::outs() << "\n";
     }
     StatsManager::ComputeStats(OptionManager::InputFile);
     wc = StatsManager::GetNumOfWords();
