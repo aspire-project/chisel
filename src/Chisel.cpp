@@ -67,10 +67,9 @@ int main(int argc, char *argv[]) {
     spdlog::get("Logger")->info("Iteration {} (Word: {})", Iteration, wc);
     wc0 = wc;
 
-    if (!OptionManager::SkipDCE) {
-      DeadcodeElimination *DCE = new DeadcodeElimination();
-      DCEFrontend::Parse(OptionManager::InputFile, DCE);
-    }
+    if (!OptionManager::SkipDCE)
+      DeadCodeElimination::Run();
+
     if (!OptionManager::SkipGlobal) {
       spdlog::get("Logger")->info("Start global reduction");
       Reduction *GR = new GlobalReduction();

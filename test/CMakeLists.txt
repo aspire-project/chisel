@@ -154,6 +154,12 @@ add_test(
 )
 
 add_test(
+  NAME dce3
+  COMMAND ./test.sh dce3 --skip_global --skip_local
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)
+
+add_test(
   NAME label0
   COMMAND ./test.sh label0
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"

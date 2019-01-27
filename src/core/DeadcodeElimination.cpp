@@ -15,21 +15,31 @@
 #include "llvm/Support/TargetSelect.h"
 
 #include "FileManager.h"
+#include "Frontend.h"
 #include "OptionManager.h"
 
-void DeadcodeElimination::Initialize(clang::ASTContext &Ctx) {
+void DeadCodeElimination::Run() {
+  DCEFrontend::Parse(OptionManager::InputFile, new ClangDeadcodeElimination());
+  Frontend::Parse(OptionManager::InputFile, new BlockElimination());
+}
+
+//===----------------------------------------------------------------------===//
+// ClangDeadcodeElimination Implementation
+//===----------------------------------------------------------------------===//
+
+void ClangDeadcodeElimination::Initialize(clang::ASTContext &Ctx) {
   Transformation::Initialize(Ctx);
   CollectionVisitor = new DeadcodeElementCollectionVisitor(this);
 }
 
-bool DeadcodeElimination::HandleTopLevelDecl(clang::DeclGroupRef D) {
+bool ClangDeadcodeElimination::HandleTopLevelDecl(clang::DeclGroupRef D) {
   for (clang::DeclGroupRef::iterator I = D.begin(), E = D.end(); I != E; ++I)
     CollectionVisitor->TraverseDecl(*I);
   return true;
 }
 
 clang::SourceRange
-DeadcodeElimination::getRemoveRange(clang::SourceLocation Loc) {
+ClangDeadcodeElimination::getRemoveRange(clang::SourceLocation Loc) {
   for (auto Entry : LocationMapping) {
     clang::SourceLocation Begin = Entry.second.getBegin();
     clang::SourceLocation End;
@@ -49,7 +59,7 @@ DeadcodeElimination::getRemoveRange(clang::SourceLocation Loc) {
   return clang::SourceRange();
 }
 
-bool DeadcodeElimination::isConstant(clang::Stmt *S) {
+bool ClangDeadcodeElimination::isConstant(clang::Stmt *S) {
   if (clang::StringLiteral *L = llvm::dyn_cast<clang::StringLiteral>(S))
     return true;
   if (clang::IntegerLiteral *L = llvm::dyn_cast<clang::IntegerLiteral>(S))
@@ -74,7 +84,7 @@ bool DeadcodeElimination::isConstant(clang::Stmt *S) {
   return false;
 }
 
-void DeadcodeElimination::removeUnusedElements() {
+void ClangDeadcodeElimination::removeUnusedElements() {
   for (auto Loc : UnusedLocations) {
     clang::SourceRange Range = getRemoveRange(Loc);
     if (Range.isInvalid())
@@ -97,7 +107,7 @@ bool DeadcodeElementCollectionVisitor::VisitLabelStmt(clang::LabelStmt *LS) {
   return true;
 }
 
-bool DCEFrontend::Parse(std::string &InputFile, DeadcodeElimination *R) {
+bool DCEFrontend::Parse(std::string &InputFile, ClangDeadcodeElimination *R) {
   std::unique_ptr<clang::CompilerInstance> CI(new clang::CompilerInstance);
   clang::DiagnosticOptions *Opts = new clang::DiagnosticOptions();
   Opts->Warnings.push_back("unused-variable");
@@ -138,5 +148,43 @@ bool DCEFrontend::Parse(std::string &InputFile, DeadcodeElimination *R) {
     R->UnusedLocations.emplace_back(DiagnosticIterator->first);
   R->removeUnusedElements();
   CI->getDiagnosticClient().EndSourceFile();
+  return true;
+}
+
+//===----------------------------------------------------------------------===//
+// BlockElimination Implementation
+//===----------------------------------------------------------------------===//
+
+void BlockElimination::Initialize(clang::ASTContext &Ctx) {
+  Transformation::Initialize(Ctx);
+  Visitor = new BlockEliminationVisitor(this);
+}
+
+bool BlockElimination::HandleTopLevelDecl(clang::DeclGroupRef D) {
+  for (clang::DeclGroupRef::iterator I = D.begin(), E = D.end(); I != E; ++I)
+    Visitor->TraverseDecl(*I);
+  return true;
+}
+
+void BlockElimination::HandleTranslationUnit(clang::ASTContext &Ctx) {
+  TheRewriter.overwriteChangedFiles();
+}
+
+void BlockElimination::removeBlock(clang::CompoundStmt *CS) {
+  removeSourceText(CS->getLBracLoc(), CS->getLBracLoc().getLocWithOffset(1));
+  removeSourceText(CS->getRBracLoc(), CS->getRBracLoc().getLocWithOffset(1));
+}
+
+bool BlockEliminationVisitor::VisitFunctionDecl(clang::FunctionDecl *FD) {
+  Consumer->FunctionBodies.insert(FD->getBody());
+  return true;
+}
+
+bool BlockEliminationVisitor::VisitCompoundStmt(clang::CompoundStmt *CS) {
+  if (CS->size() == 1) {
+    if (clang::CompoundStmt *SCS =
+            llvm::dyn_cast<clang::CompoundStmt>(CS->body_front()))
+      Consumer->removeBlock(SCS);
+  }
   return true;
 }

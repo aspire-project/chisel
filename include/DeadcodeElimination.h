@@ -14,12 +14,17 @@ class DeadcodeElementCollectionVisitor;
 ///
 /// DeadcodeElimination removes unused statements without calling the oracle,
 /// and removes unused labels and unused variable declarations that are side-effect free.
-class DeadcodeElimination : public Transformation {
+class DeadCodeElimination {
+public:
+  static void Run();
+};
+
+class ClangDeadcodeElimination : public Transformation {
   friend class LocalElementCollectionVisitor;
 
 public:
-  DeadcodeElimination() : CollectionVisitor(NULL) {}
-  ~DeadcodeElimination() { delete CollectionVisitor; }
+  ClangDeadcodeElimination() : CollectionVisitor(NULL) {}
+  ~ClangDeadcodeElimination() { delete CollectionVisitor; }
 
   void removeUnusedElements();
   std::map<clang::Decl *, clang::SourceRange> LocationMapping;
@@ -37,18 +42,51 @@ private:
 class DeadcodeElementCollectionVisitor
     : public clang::RecursiveASTVisitor<DeadcodeElementCollectionVisitor> {
 public:
-  DeadcodeElementCollectionVisitor(DeadcodeElimination *R) : Consumer(R) {}
+  DeadcodeElementCollectionVisitor(ClangDeadcodeElimination *R) : Consumer(R) {}
 
   bool VisitVarDecl(clang::VarDecl *VD);
   bool VisitLabelStmt(clang::LabelStmt *LS);
 
 private:
-  DeadcodeElimination *Consumer;
+  ClangDeadcodeElimination *Consumer;
 };
 
 class DCEFrontend {
 public:
-  static bool Parse(std::string &Filename, DeadcodeElimination *R);
+  static bool Parse(std::string &Filename, ClangDeadcodeElimination *R);
+};
+
+class BlockEliminationVisitor;
+
+class BlockElimination : public Transformation {
+  friend class BlockEliminationVisitor;
+
+public:
+  BlockElimination() : Visitor(NULL) {}
+  ~BlockElimination() { delete Visitor; }
+
+  void removeBlock(clang::CompoundStmt *CS);
+
+private:
+  void Initialize(clang::ASTContext &Ctx);
+  bool HandleTopLevelDecl(clang::DeclGroupRef D);
+  void HandleTranslationUnit(clang::ASTContext &Ctx);
+
+  std::set<clang::Stmt *> FunctionBodies;
+
+  BlockEliminationVisitor *Visitor;
+};
+
+class BlockEliminationVisitor
+    : public clang::RecursiveASTVisitor<BlockEliminationVisitor> {
+public:
+  BlockEliminationVisitor(BlockElimination *R) : Consumer(R) {}
+
+  bool VisitFunctionDecl(clang::FunctionDecl *FD);
+  bool VisitCompoundStmt(clang::CompoundStmt *CS);
+
+private:
+  BlockElimination *Consumer;
 };
 
 #endif // DEADCODE_ELIMINATION_H
