@@ -22,6 +22,7 @@ include_directories(include)
 add_executable(chisel
   src/Chisel.cpp
   src/core/Frontend.cpp
+  src/core/SourceManager.cpp
   src/core/Transformation.cpp
   src/core/Reduction.cpp
   src/core/GlobalReduction.cpp

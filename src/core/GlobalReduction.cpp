@@ -5,6 +5,7 @@
 #include "FileManager.h"
 #include "OptionManager.h"
 #include "Profiler.h"
+#include "SourceManager.h"
 
 void GlobalReduction::Initialize(clang::ASTContext &Ctx) {
   Reduction::Initialize(Ctx);
@@ -40,7 +41,7 @@ bool GlobalReduction::callOracle() {
 }
 
 bool GlobalReduction::test(DDElementVector &ToBeRemoved) {
-  const clang::SourceManager *SM = &Context->getSourceManager();
+  const clang::SourceManager &SM = Context->getSourceManager();
   std::vector<clang::SourceRange> Ranges;
   std::vector<llvm::StringRef> Reverts;
 
@@ -59,7 +60,7 @@ bool GlobalReduction::test(DDElementVector &ToBeRemoved) {
     } else if (clang::EmptyDecl *ED = llvm::dyn_cast<clang::EmptyDecl>(D)) {
       End = ED->getSourceRange().getEnd();
     } else {
-      End = getEndLocationUntil(D->getSourceRange(), ';');
+      End = SourceManager::GetEndLocationUntil(SM, D->getSourceRange(), ';');
     }
 
     if (End.isInvalid() || Start.isInvalid())
@@ -67,7 +68,7 @@ bool GlobalReduction::test(DDElementVector &ToBeRemoved) {
 
     clang::SourceRange Range(Start, End);
     Ranges.emplace_back(Range);
-    llvm::StringRef Revert = getSourceText(Start, End);
+    llvm::StringRef Revert = SourceManager::GetSourceText(SM, Start, End);
     Reverts.emplace_back(Revert);
     removeSourceText(Start, End);
   }

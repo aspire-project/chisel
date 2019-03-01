@@ -7,6 +7,7 @@
 #include "FileManager.h"
 #include "OptionManager.h"
 #include "Profiler.h"
+#include "SourceManager.h"
 
 using BinaryOperator = clang::BinaryOperator;
 using BreakStmt = clang::BreakStmt;
@@ -76,6 +77,7 @@ bool LocalReduction::callOracle() {
 }
 
 bool LocalReduction::test(DDElementVector &ToBeRemoved) {
+  const clang::SourceManager &SM = Context->getSourceManager();
   std::vector<clang::SourceRange> Ranges;
   std::vector<llvm::StringRef> Reverts;
 
@@ -85,14 +87,14 @@ bool LocalReduction::test(DDElementVector &ToBeRemoved) {
 
     clang::Stmt *S = Element.get<Stmt *>();
     clang::SourceLocation Start = S->getSourceRange().getBegin();
-    clang::SourceLocation End = getEndOfStmt(S);
+    clang::SourceLocation End = SourceManager::GetEndOfStmt(Context, S);
 
     if (End.isInvalid() || Start.isInvalid())
       return false;
 
     SourceRange Range(Start, End);
     Ranges.emplace_back(Range);
-    llvm::StringRef Revert = getSourceText(Start, End);
+    llvm::StringRef Revert = SourceManager::GetSourceText(SM, Start, End);
     Reverts.emplace_back(Revert);
     removeSourceText(Start, End);
   }
@@ -316,11 +318,13 @@ std::vector<Stmt *> LocalReduction::getBodyStatements(CompoundStmt *CS) {
 }
 
 void LocalReduction::reduceSwitch(SwitchStmt *SS) {
+  const clang::SourceManager &SM = Context->getSourceManager();
   auto Body = SS->getBody();
   SourceLocation BeginSwitch = SS->getSourceRange().getBegin();
-  SourceLocation EndSwitch = getEndOfStmt(SS);
+  SourceLocation EndSwitch = SourceManager::GetEndOfStmt(Context, SS);
 
-  llvm::StringRef Revert = getSourceText(BeginSwitch, EndSwitch);
+  llvm::StringRef Revert =
+      SourceManager::GetSourceText(SM, BeginSwitch, EndSwitch);
 
   std::vector<clang::SwitchCase *> Cases;
   for (clang::SwitchCase *SC = SS->getSwitchCaseList(); SC != NULL;
@@ -363,16 +367,17 @@ void LocalReduction::reduceSwitch(SwitchStmt *SS) {
 }
 
 void LocalReduction::reduceIf(IfStmt *IS) {
+  const clang::SourceManager &SM = Context->getSourceManager();
   SourceLocation BeginIf = IS->getSourceRange().getBegin();
-  SourceLocation EndIf = getEndOfStmt(IS);
-  SourceLocation EndCond = getEndOfCond(IS->getCond());
-  SourceLocation EndThen = getEndOfStmt(IS->getThen());
+  SourceLocation EndIf = SourceManager::GetEndOfStmt(Context, IS);
+  SourceLocation EndCond = SourceManager::GetEndOfCond(SM, IS->getCond());
+  SourceLocation EndThen = SourceManager::GetEndOfStmt(Context, IS->getThen());
 
   if (BeginIf.isInvalid() || EndIf.isInvalid() || EndCond.isInvalid() ||
       EndThen.isInvalid())
     return;
 
-  llvm::StringRef RevertIf = getSourceText(BeginIf, EndIf);
+  llvm::StringRef RevertIf = SourceManager::GetSourceText(SM, BeginIf, EndIf);
 
   if (IS->getElse()) {
     SourceLocation ElseLoc = IS->getElseLoc();
@@ -422,12 +427,13 @@ void LocalReduction::reduceIf(IfStmt *IS) {
 }
 
 void LocalReduction::reduceFor(ForStmt *FS) {
+  const clang::SourceManager &SM = Context->getSourceManager();
   auto Body = FS->getBody();
   SourceLocation BeginFor = FS->getSourceRange().getBegin();
-  SourceLocation EndFor = getEndOfStmt(FS);
+  SourceLocation EndFor = SourceManager::GetEndOfStmt(Context, FS);
   SourceLocation EndCond = FS->getRParenLoc();
 
-  llvm::StringRef Revert = getSourceText(BeginFor, EndFor);
+  llvm::StringRef Revert = SourceManager::GetSourceText(SM, BeginFor, EndFor);
 
   removeSourceText(BeginFor, EndCond);
   TheRewriter.overwriteChangedFiles();
@@ -449,12 +455,14 @@ void LocalReduction::reduceFor(ForStmt *FS) {
 }
 
 void LocalReduction::reduceWhile(WhileStmt *WS) {
+  const clang::SourceManager &SM = Context->getSourceManager();
   auto Body = WS->getBody();
   SourceLocation BeginWhile = WS->getSourceRange().getBegin();
-  SourceLocation EndWhile = getEndOfStmt(WS);
-  SourceLocation EndCond = getEndOfCond(WS->getCond());
+  SourceLocation EndWhile = SourceManager::GetEndOfStmt(Context, WS);
+  SourceLocation EndCond = SourceManager::GetEndOfCond(SM, WS->getCond());
 
-  llvm::StringRef Revert = getSourceText(BeginWhile, EndWhile);
+  llvm::StringRef Revert =
+      SourceManager::GetSourceText(SM, BeginWhile, EndWhile);
 
   removeSourceText(BeginWhile, EndCond);
   TheRewriter.overwriteChangedFiles();
@@ -469,12 +477,13 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
 }
 
 void LocalReduction::reduceDoWhile(DoStmt *DS) {
+  const clang::SourceManager &SM = Context->getSourceManager();
   auto Body = DS->getBody();
   SourceLocation BeginDo = DS->getSourceRange().getBegin();
-  SourceLocation EndDo = getEndOfStmt(DS);
-  SourceLocation EndCond = getEndOfCond(DS->getCond());
+  SourceLocation EndDo = SourceManager::GetEndOfStmt(Context, DS);
+  SourceLocation EndCond = SourceManager::GetEndOfCond(SM, DS->getCond());
 
-  llvm::StringRef Revert = getSourceText(BeginDo, EndDo);
+  llvm::StringRef Revert = SourceManager::GetSourceText(SM, BeginDo, EndDo);
 
   removeSourceText(BeginDo, BeginDo.getLocWithOffset(1));
   removeSourceText(DS->getWhileLoc(), EndDo);

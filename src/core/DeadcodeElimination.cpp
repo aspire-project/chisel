@@ -17,6 +17,7 @@
 #include "FileManager.h"
 #include "Frontend.h"
 #include "OptionManager.h"
+#include "SourceManager.h"
 
 void DeadCodeElimination::Run() {
   DCEFrontend::Parse(OptionManager::InputFile, new ClangDeadcodeElimination());
@@ -40,15 +41,17 @@ bool ClangDeadcodeElimination::HandleTopLevelDecl(clang::DeclGroupRef D) {
 
 clang::SourceRange
 ClangDeadcodeElimination::getRemoveRange(clang::SourceLocation Loc) {
+  const clang::SourceManager &SM = Context->getSourceManager();
   for (auto Entry : LocationMapping) {
     clang::SourceLocation Begin = Entry.second.getBegin();
     clang::SourceLocation End;
     if (clang::VarDecl *VD = llvm::dyn_cast<clang::VarDecl>(Entry.first)) {
       if (VD->hasInit()) {
         if (isConstant(VD->getInit()))
-          End = getEndLocationUntil(VD->getSourceRange(), ';');
+          End =
+              SourceManager::GetEndLocationUntil(SM, VD->getSourceRange(), ';');
       } else
-        End = getEndLocationUntil(VD->getSourceRange(), ';');
+        End = SourceManager::GetEndLocationUntil(SM, VD->getSourceRange(), ';');
     } else if (clang::LabelDecl *LD =
                    llvm::dyn_cast<clang::LabelDecl>(Entry.first))
       End = LD->getStmt()->getSubStmt()->getBeginLoc().getLocWithOffset(-1);
