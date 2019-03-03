@@ -2,10 +2,12 @@
 #define OPTION_MANAGER_H
 
 #include <string>
+#include <vector>
 
 /// \brief Manages and processes all the command-line options that are passed to Chisel
 class OptionManager {
 public:
+  static std::vector<std::string> InputFiles;
   static std::string InputFile;
   static std::string OutputFile;
   static std::string OracleFile;

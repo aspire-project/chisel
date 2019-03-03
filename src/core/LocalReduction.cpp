@@ -41,8 +41,12 @@ void LocalReduction::Initialize(clang::ASTContext &Ctx) {
 }
 
 bool LocalReduction::HandleTopLevelDecl(DeclGroupRef D) {
-  for (DeclGroupRef::iterator I = D.begin(), E = D.end(); I != E; ++I)
+  clang::SourceManager &SM = Context->getSourceManager();
+  for (DeclGroupRef::iterator I = D.begin(), E = D.end(); I != E; ++I) {
+    if (SourceManager::IsInHeader(SM, *I))
+      continue;
     CollectionVisitor->TraverseDecl(*I);
+  }
   return true;
 }
 

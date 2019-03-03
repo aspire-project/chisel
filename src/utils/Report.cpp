@@ -49,7 +49,7 @@ void Report::print() {
                                 Prof->getSuccessfulLocalReductionCounter(),
                                 Prof->getLocalReductionCounter());
   }
-  StatsManager::ComputeStats(FileManager::GetInstance()->getOriginFilePath());
+  StatsManager::ComputeStats(FileManager::GetInstance()->getOriginFilePaths());
   spdlog::get("Logger")->info("{:>25}{:>22}", "#Functions (Original) :",
                               StatsManager::GetNumOfFunctions());
   spdlog::get("Logger")->info("{:>25}{:>22}", "#Statements (Original) :",

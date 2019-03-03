@@ -53,6 +53,7 @@ static struct option long_options[] = {
 
 static const char *optstring = "ho:t:sDdglcLGCpvS";
 
+std::vector<std::string> OptionManager::InputFiles;
 std::string OptionManager::InputFile = "";
 std::string OptionManager::OutputFile = "";
 std::string OptionManager::OracleFile = "";
@@ -154,7 +155,16 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
 
   if (!OptionManager::Stat) {
     OptionManager::OracleFile = std::string(argv[optind]);
-    OptionManager::InputFile = std::string(argv[optind + 1]);
+
+    for (int i = optind + 1; i < argc; i++) {
+      std::string Input = std::string(argv[i]);
+      if (!llvm::sys::fs::exists(Input)) {
+        llvm::errs() << "The specified input file " << Input
+                     << " does not exist.\n";
+        exit(1);
+      }
+      InputFiles.push_back(Input);
+    }
 
     if (!llvm::sys::fs::exists(OptionManager::OracleFile)) {
       llvm::errs() << "The specified oracle file " << OptionManager::OracleFile
@@ -163,10 +173,6 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
     } else if (!llvm::sys::fs::can_execute(OptionManager::OracleFile)) {
       llvm::errs() << "The specified oracle file " << OptionManager::OracleFile
                    << " is not executable.\n";
-      exit(1);
-    } else if (!llvm::sys::fs::exists(OptionManager::InputFile)) {
-      llvm::errs() << "The specified input file " << OptionManager::InputFile
-                   << " does not exist.\n";
       exit(1);
     } else if (llvm::sys::ExecuteAndWait(OptionManager::OracleFile,
                                          {OptionManager::OracleFile})) {

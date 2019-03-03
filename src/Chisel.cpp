@@ -37,7 +37,8 @@ void initialize() {
   spdlog::register_logger(Logger);
   Profiler::Initialize();
   spdlog::get("Logger")->info("Oracle: {}", OptionManager::OracleFile);
-  spdlog::get("Logger")->info("Input: {}", OptionManager::InputFile);
+  for (auto &File : OptionManager::InputFiles)
+    spdlog::get("Logger")->info("Input: {}", File);
   spdlog::get("Logger")->info("Output Directory: {}", OptionManager::OutputDir);
 }
 
@@ -46,20 +47,13 @@ void finalize() {
   Profiler::Finalize();
 }
 
-int main(int argc, char *argv[]) {
-  OptionManager::handleOptions(argc, argv);
-  initialize();
-
-  Profiler::GetInstance()->beginChisel();
+int reduceOneFile(std::string &File) {
+  spdlog::get("Logger")->info("Reduce File: {}", File);
+  OptionManager::InputFile = File;
 
   StatsManager::ComputeStats(OptionManager::InputFile);
   int wc0 = std::numeric_limits<int>::max();
   int wc = StatsManager::GetNumOfWords();
-
-  if (OptionManager::Stat) {
-    StatsManager::Print();
-    return 0;
-  }
 
   int Iteration = 0;
   while (wc < wc0) {
@@ -83,9 +77,35 @@ int main(int argc, char *argv[]) {
     StatsManager::ComputeStats(OptionManager::InputFile);
     wc = StatsManager::GetNumOfWords();
   }
+  return wc;
+}
 
-  Transformation *R = new Reformat();
-  Frontend::Parse(OptionManager::InputFile, R);
+int main(int argc, char *argv[]) {
+  OptionManager::handleOptions(argc, argv);
+  initialize();
+
+  Profiler::GetInstance()->beginChisel();
+
+  StatsManager::ComputeStats(OptionManager::InputFiles);
+  int wc0 = std::numeric_limits<int>::max();
+  int wc = StatsManager::GetNumOfWords();
+
+  if (OptionManager::Stat) {
+    StatsManager::Print();
+    return 0;
+  }
+
+  while (wc < wc0) {
+    wc = 0;
+    for (auto &File : OptionManager::InputFiles)
+      wc += reduceOneFile(File);
+    wc0 = wc;
+  }
+
+  for (auto &File : OptionManager::InputFiles) {
+    Transformation *R = new Reformat();
+    Frontend::Parse(File, R);
+  }
 
   Profiler::GetInstance()->endChisel();
 

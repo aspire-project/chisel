@@ -10,6 +10,23 @@ int StatsManager::NumOfWords = 0;
 int StatsManager::NumOfStatements = 0;
 int StatsManager::NumOfFunctions = 0;
 
+void StatsManager::ComputeStats(std::vector<std::string> &FileNames) {
+  NumOfWords = 0;
+  NumOfStatements = 0;
+  NumOfFunctions = 0;
+
+  for (auto &FileName : FileNames) {
+    StatsComputer *S = new StatsComputer();
+    Frontend::Parse(FileName, S);
+
+    std::ifstream IFS(FileName.c_str());
+    std::string Word;
+    while (IFS >> Word) {
+      NumOfWords++;
+    }
+  }
+}
+
 void StatsManager::ComputeStats(std::string &FileName) {
   NumOfWords = 0;
   NumOfStatements = 0;

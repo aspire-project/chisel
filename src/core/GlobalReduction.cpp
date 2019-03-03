@@ -13,8 +13,12 @@ void GlobalReduction::Initialize(clang::ASTContext &Ctx) {
 }
 
 bool GlobalReduction::HandleTopLevelDecl(clang::DeclGroupRef D) {
-  for (clang::DeclGroupRef::iterator I = D.begin(), E = D.end(); I != E; ++I)
+  clang::SourceManager &SM = Context->getSourceManager();
+  for (clang::DeclGroupRef::iterator I = D.begin(), E = D.end(); I != E; ++I) {
+    if (SourceManager::IsInHeader(SM, *I))
+      continue;
     CollectionVisitor->TraverseDecl(*I);
+  }
   return true;
 }
 

@@ -2,6 +2,7 @@
 #define STATS_MANAGER_H
 
 #include <string>
+#include <vector>
 
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/RecursiveASTVisitor.h"
@@ -11,6 +12,7 @@
 class StatsManager {
 public:
   static void ComputeStats(std::string &FileName);
+  static void ComputeStats(std::vector<std::string> &FileNames);
   static void Print();
 
   static int GetNumOfWords() { return NumOfWords; }

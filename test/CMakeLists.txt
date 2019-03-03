@@ -170,3 +170,9 @@ add_test(
   COMMAND ./test.sh macro0
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
 )
+
+add_test(
+  NAME integration0
+  COMMAND ./test.sh integration0 subfile0.c subfile1.c
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)

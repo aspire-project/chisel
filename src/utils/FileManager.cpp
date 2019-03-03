@@ -8,10 +8,13 @@ FileManager *FileManager::Instance;
 
 void FileManager::Initialize() {
   Instance = new FileManager();
-  Instance->Origin = OptionManager::OutputDir + "/origin.c";
-
   llvm::sys::fs::create_directory(OptionManager::OutputDir);
-  llvm::sys::fs::copy_file(OptionManager::InputFile, Instance->Origin);
+
+  for (auto &File : OptionManager::InputFiles) {
+    std::string Origin = OptionManager::OutputDir + "/" + File + ".origin.c";
+    Instance->Origins.push_back(Origin);
+    llvm::sys::fs::copy_file(File, Origin);
+  }
 }
 
 FileManager *FileManager::GetInstance() {
@@ -36,8 +39,10 @@ void FileManager::saveTemp(std::string Phase, bool Status) {
 }
 
 void FileManager::Finalize() {
-  llvm::sys::fs::copy_file(OptionManager::InputFile, OptionManager::OutputFile);
-  llvm::sys::fs::copy_file(Instance->Origin, OptionManager::InputFile);
-
+  for (auto &File : OptionManager::InputFiles) {
+    std::string Origin = OptionManager::OutputDir + "/" + File + ".origin.c";
+    llvm::sys::fs::copy_file(File, File + ".chisel.c");
+    llvm::sys::fs::copy_file(Origin, File);
+  }
   delete Instance;
 }
