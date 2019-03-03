@@ -164,3 +164,9 @@ add_test(
   COMMAND ./test.sh label0
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
 )
+
+add_test(
+  NAME macro0
+  COMMAND ./test.sh macro0
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)

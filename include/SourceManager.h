@@ -13,6 +13,8 @@ public:
   FindLocationAfterCond(const clang::SourceManager &SM, clang::Expr *E);
   static clang::SourceLocation GetEndOfCond(const clang::SourceManager &SM,
                                             clang::Expr *E);
+  static clang::SourceLocation GetBeginOfStmt(clang::ASTContext *Context,
+                                              clang::Stmt *S);
   static clang::SourceLocation GetEndOfStmt(clang::ASTContext *Context,
                                             clang::Stmt *S);
   static clang::SourceLocation GetEndLocation(clang::ASTContext *Context,

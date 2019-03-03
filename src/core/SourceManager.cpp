@@ -38,6 +38,10 @@ clang::SourceLocation
 SourceManager::GetEndLocationUntil(const clang::SourceManager &SM,
                                    clang::SourceRange Range, char Symbol) {
   clang::SourceLocation EndLoc = Range.getEnd();
+
+  if (EndLoc.isMacroID())
+    EndLoc = SM.getFileLoc(EndLoc);
+
   if (EndLoc.isInvalid())
     return EndLoc;
 
@@ -63,6 +67,16 @@ clang::SourceLocation SourceManager::GetEndLocation(clang::ASTContext *Context,
     End = GetEndLocationUntil(SM, Loc, ';');
   }
   return End;
+}
+
+clang::SourceLocation SourceManager::GetBeginOfStmt(clang::ASTContext *Context,
+                                                    clang::Stmt *S) {
+  const clang::SourceManager &SM = Context->getSourceManager();
+  clang::SourceLocation Start = S->getSourceRange().getBegin();
+  if (Start.isMacroID())
+    return SM.getFileLoc(Start);
+  else
+    return Start;
 }
 
 clang::SourceLocation SourceManager::GetEndOfStmt(clang::ASTContext *Context,

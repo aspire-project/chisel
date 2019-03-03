@@ -86,7 +86,7 @@ bool LocalReduction::test(DDElementVector &ToBeRemoved) {
       continue;
 
     clang::Stmt *S = Element.get<Stmt *>();
-    clang::SourceLocation Start = S->getSourceRange().getBegin();
+    clang::SourceLocation Start = SourceManager::GetBeginOfStmt(Context, S);
     clang::SourceLocation End = SourceManager::GetEndOfStmt(Context, S);
 
     if (End.isInvalid() || Start.isInvalid())
@@ -282,7 +282,7 @@ bool LocalReduction::isInvalidChunk(DDElementVector &Chunk) {
 void LocalReduction::doHierarchicalDeltaDebugging(Stmt *S) {
   if (S == NULL)
     return;
-  clang::SourceLocation Start = S->getSourceRange().getBegin();
+  clang::SourceLocation Start = SourceManager::GetBeginOfStmt(Context, S);
   const clang::SourceManager &SM = Context->getSourceManager();
   std::string Loc = Start.printToString(SM);
   if (IfStmt *IS = llvm::dyn_cast<IfStmt>(S)) {

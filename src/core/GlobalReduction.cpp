@@ -63,6 +63,11 @@ bool GlobalReduction::test(DDElementVector &ToBeRemoved) {
       End = SourceManager::GetEndLocationUntil(SM, D->getSourceRange(), ';');
     }
 
+    if (Start.isMacroID())
+      Start = SM.getFileLoc(Start);
+    if (End.isMacroID())
+      End = SM.getFileLoc(End);
+
     if (End.isInvalid() || Start.isInvalid())
       return false;
 
