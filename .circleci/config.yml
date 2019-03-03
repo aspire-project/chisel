@@ -1,13 +1,34 @@
 version: 2
 
 jobs:
-  build:
+  build_debian:
     docker:
       - image: debian:sid
     steps:
       - checkout
-      - run: apt-get update && apt-get install -y sudo
-      - run: sudo apt-get install -y clang libclang-dev llvm-dev cmake git
-      - run: sudo apt-get install -y libspdlog-dev nlohmann-json-dev
-      - run: sudo apt-get install -y libmlpack-dev
+      - run: apt-get update
+      - run: apt-get install -y clang libclang-dev llvm-dev cmake git
+      - run: apt-get install -y libspdlog-dev nlohmann-json-dev
+      - run: apt-get install -y libmlpack-dev
       - run: mkdir build && cd build && cmake .. && make -j && make test
+  build_ubuntu:
+    docker:
+      - image: ubuntu:18.04
+    steps:
+      - checkout
+      - run: apt-get update && apt-get install -y software-properties-common wget
+      - run: wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
+      - run: apt-add-repository "deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-7 main" && apt-get update
+      - run: apt-get install -y clang-7 libclang-7-dev llvm-7-dev cmake git wget
+      - run: wget http://archive.ubuntu.com/ubuntu/pool/universe/s/spdlog/libspdlog-dev_1.3.1-1_amd64.deb
+      - run: dpkg -i libspdlog-dev_1.3.1-1_amd64.deb
+      - run: apt-get install -y nlohmann-json-dev
+      - run: apt-get install -y libmlpack-dev
+      - run: ln -s /usr/bin/clang-7 /usr/bin/clang
+      - run: mkdir build && cd build && cmake -DCMAKE_CXX_COMPILER=clang .. && make -j && make test
+workflows:
+  version: 2
+  workflow:
+    jobs:
+      - build_debian
+      - build_ubuntu
