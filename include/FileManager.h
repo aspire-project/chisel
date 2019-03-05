@@ -10,8 +10,9 @@ public:
   static void Initialize();
   static void Finalize();
   static FileManager *GetInstance();
+  static std::string Readlink(std::string &Name);
+  static std::string Dirname(std::string &Name);
 
-  std::vector<std::string> &getOriginFilePaths() { return Origins; }
   std::string getTempFileName(std::string Suffix);
   void saveTemp(std::string Phase, bool Status);
 
@@ -21,7 +22,6 @@ private:
 
   static FileManager *Instance;
 
-  std::vector<std::string> Origins;
   int TempCounter = 0;
 };
 

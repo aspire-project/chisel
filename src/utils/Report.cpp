@@ -6,6 +6,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include "FileManager.h"
+#include "IntegrationManager.h"
 #include "OptionManager.h"
 #include "Profiler.h"
 #include "StatsManager.h"
@@ -49,12 +50,13 @@ void Report::print() {
                                 Prof->getSuccessfulLocalReductionCounter(),
                                 Prof->getLocalReductionCounter());
   }
-  StatsManager::ComputeStats(FileManager::GetInstance()->getOriginFilePaths());
+  StatsManager::ComputeStats(
+      IntegrationManager::GetInstance()->getOriginFilePaths());
   spdlog::get("Logger")->info("{:>25}{:>22}", "#Functions (Original) :",
                               StatsManager::GetNumOfFunctions());
   spdlog::get("Logger")->info("{:>25}{:>22}", "#Statements (Original) :",
                               StatsManager::GetNumOfStatements());
-  StatsManager::ComputeStats(OptionManager::InputFile);
+  StatsManager::ComputeStats(OptionManager::InputFiles);
   spdlog::get("Logger")->info("{:>25}{:>22}", "#Functions (Reduced) :",
                               StatsManager::GetNumOfFunctions());
   spdlog::get("Logger")->info("{:>25}{:>22}", "#Statements (Reduced) :",

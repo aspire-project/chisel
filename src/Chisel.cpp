@@ -8,6 +8,7 @@
 #include "FileManager.h"
 #include "Frontend.h"
 #include "GlobalReduction.h"
+#include "IntegrationManager.h"
 #include "LocalReduction.h"
 #include "OptionManager.h"
 #include "Profiler.h"
@@ -35,6 +36,8 @@ void initialize() {
     Logger->set_level(spdlog::level::info);
   }
   spdlog::register_logger(Logger);
+
+  IntegrationManager::Initialize();
   Profiler::Initialize();
   spdlog::get("Logger")->info("Oracle: {}", OptionManager::OracleFile);
   for (auto &File : OptionManager::InputFiles)
@@ -43,6 +46,7 @@ void initialize() {
 }
 
 void finalize() {
+  IntegrationManager::Finalize();
   FileManager::Finalize();
   Profiler::Finalize();
 }
@@ -96,13 +100,14 @@ int main(int argc, char *argv[]) {
   }
 
   while (wc < wc0) {
+    wc0 = wc;
     wc = 0;
     for (auto &File : OptionManager::InputFiles)
       wc += reduceOneFile(File);
-    wc0 = wc;
   }
 
   for (auto &File : OptionManager::InputFiles) {
+    OptionManager::InputFile = File;
     Transformation *R = new Reformat();
     Frontend::Parse(File, R);
   }

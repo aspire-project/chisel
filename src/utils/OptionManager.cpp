@@ -7,6 +7,8 @@
 #include "llvm/Support/Program.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "FileManager.h"
+
 const std::string usage_simple("Usage: chisel [OPTIONS]... ORACLE PROGRAM");
 const std::string error_message("Try 'chisel --help' for more information.");
 
@@ -18,6 +20,7 @@ void OptionManager::showUsage() {
       << "  --help                 Show this help message\n"
       << "  --output OUTPUT        De-bloated C file\n"
       << "  --output_dir OUTDIR    Output directory\n"
+      << "  --build                Integrate Chisel with build system\n"
       << "  --save_temp            Save intermediate results\n"
       << "  --skip_learning        Disable decision tree learning\n"
       << "  --skip_delay_learning  Learn a new model for every iteration\n"
@@ -37,6 +40,7 @@ static struct option long_options[] = {
     {"help", no_argument, 0, 'h'},
     {"output", required_argument, 0, 'o'},
     {"output_dir", required_argument, 0, 't'},
+    {"build", no_argument, 0, 'b'},
     {"save_temp", no_argument, 0, 's'},
     {"skip_learning", no_argument, 0, 'D'},
     {"skip_delay_learning", no_argument, 0, 'd'},
@@ -53,11 +57,14 @@ static struct option long_options[] = {
 
 static const char *optstring = "ho:t:sDdglcLGCpvS";
 
+std::string OptionManager::BinFile = "";
 std::vector<std::string> OptionManager::InputFiles;
+std::vector<std::string> OptionManager::BuildCmd;
 std::string OptionManager::InputFile = "";
 std::string OptionManager::OutputFile = "";
 std::string OptionManager::OracleFile = "";
 std::string OptionManager::OutputDir = "chisel-out";
+bool OptionManager::Build = false;
 bool OptionManager::SaveTemp = false;
 bool OptionManager::SkipLearning = false;
 bool OptionManager::SkipDelayLearning = false;
@@ -72,6 +79,9 @@ bool OptionManager::Debug = false;
 bool OptionManager::Stat = false;
 
 void OptionManager::handleOptions(int argc, char *argv[]) {
+  llvm::ErrorOr<std::string> Program = llvm::sys::findProgramByName(argv[0]);
+  BinFile = FileManager::Readlink(Program.get());
+
   char c;
   while ((c = getopt_long(argc, argv, optstring, long_options, 0)) != -1) {
     switch (c) {
@@ -85,6 +95,10 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
 
     case 't':
       OptionManager::OutputDir = std::string(optarg);
+      break;
+
+    case 'b':
+      Build = true;
       break;
 
     case 's':
@@ -156,16 +170,6 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
   if (!OptionManager::Stat) {
     OptionManager::OracleFile = std::string(argv[optind]);
 
-    for (int i = optind + 1; i < argc; i++) {
-      std::string Input = std::string(argv[i]);
-      if (!llvm::sys::fs::exists(Input)) {
-        llvm::errs() << "The specified input file " << Input
-                     << " does not exist.\n";
-        exit(1);
-      }
-      InputFiles.push_back(Input);
-    }
-
     if (!llvm::sys::fs::exists(OptionManager::OracleFile)) {
       llvm::errs() << "The specified oracle file " << OptionManager::OracleFile
                    << " does not exist.\n";
@@ -181,6 +185,21 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
       exit(1);
     }
 
+    // integrate Chisel with build system
+    if (Build) {
+      for (int i = optind + 1; i < argc; i++)
+        BuildCmd.push_back(std::string(argv[i]));
+    } else {
+      for (int i = optind + 1; i < argc; i++) {
+        std::string Input = std::string(argv[i]);
+        if (!llvm::sys::fs::exists(Input)) {
+          llvm::errs() << "The specified input file " << Input
+                       << " does not exist.\n";
+          exit(1);
+        }
+        InputFiles.push_back(Input);
+      }
+    }
     llvm::SmallString<128> OutputDirVec(OutputDir);
     llvm::sys::fs::make_absolute(OutputDirVec);
     OutputDir = OutputDirVec.str();

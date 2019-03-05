@@ -4,6 +4,7 @@
 *.ast
 
 test/*/chisel-out/
+test/*/*.origin.c
 test/*/*.chisel.c
 
 build/

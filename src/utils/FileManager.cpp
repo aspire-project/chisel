@@ -1,5 +1,8 @@
 #include "FileManager.h"
 
+#include <libgen.h>
+#include <unistd.h>
+
 #include "llvm/Support/FileSystem.h"
 
 #include "OptionManager.h"
@@ -9,12 +12,6 @@ FileManager *FileManager::Instance;
 void FileManager::Initialize() {
   Instance = new FileManager();
   llvm::sys::fs::create_directory(OptionManager::OutputDir);
-
-  for (auto &File : OptionManager::InputFiles) {
-    std::string Origin = OptionManager::OutputDir + "/" + File + ".origin.c";
-    Instance->Origins.push_back(Origin);
-    llvm::sys::fs::copy_file(File, Origin);
-  }
 }
 
 FileManager *FileManager::GetInstance() {
@@ -38,11 +35,29 @@ void FileManager::saveTemp(std::string Phase, bool Status) {
   }
 }
 
-void FileManager::Finalize() {
-  for (auto &File : OptionManager::InputFiles) {
-    std::string Origin = OptionManager::OutputDir + "/" + File + ".origin.c";
-    llvm::sys::fs::copy_file(File, File + ".chisel.c");
-    llvm::sys::fs::copy_file(Origin, File);
+std::string FileManager::Readlink(std::string &Name) {
+  std::string buffer(64, '\0');
+  ssize_t len;
+  while ((len = ::readlink(Name.c_str(), &buffer[0], buffer.size())) ==
+         static_cast<ssize_t>(buffer.size())) {
+    buffer.resize(buffer.size() * 2);
   }
+  if (len == -1) {
+    return Name;
+  }
+  buffer.resize(len);
+  return buffer;
+}
+
+std::string FileManager::Dirname(std::string &Name) {
+  char *Cstr = new char[Name.length() + 1];
+  strcpy(Cstr, Name.c_str());
+  ::dirname(Cstr);
+  std::string Dir(Cstr);
+  delete[] Cstr;
+  return Dir;
+}
+
+void FileManager::Finalize() {
   delete Instance;
 }

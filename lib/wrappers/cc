@@ -1,0 +1,15 @@
+#!/bin/bash
+
+NAME=$(basename $0)
+HOST_COMPILER=$(PATH=$CHISEL_OLD_PATH which $NAME)
+OUTPUT=$CHISEL_OUTPUT_DIR/"capture.txt"
+
+printf "%s" $NAME >>$OUTPUT
+for arg in "$@"; do
+  if [[ $arg == *.c ]]; then # TODO cpp
+    arg=$(realpath $arg)
+  fi
+  printf ",%s" $arg >>$OUTPUT
+done
+printf "\n" >>$OUTPUT
+$HOST_COMPILER $@
