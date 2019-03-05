@@ -18,7 +18,6 @@ void OptionManager::showUsage() {
       << "Options:"
       << "\n"
       << "  --help                 Show this help message\n"
-      << "  --output OUTPUT        De-bloated C file\n"
       << "  --output_dir OUTDIR    Output directory\n"
       << "  --build                Integrate Chisel with build system\n"
       << "  --save_temp            Save intermediate results\n"
@@ -38,7 +37,6 @@ void OptionManager::showUsage() {
 
 static struct option long_options[] = {
     {"help", no_argument, 0, 'h'},
-    {"output", required_argument, 0, 'o'},
     {"output_dir", required_argument, 0, 't'},
     {"build", no_argument, 0, 'b'},
     {"save_temp", no_argument, 0, 's'},
@@ -61,7 +59,6 @@ std::string OptionManager::BinFile = "";
 std::vector<std::string> OptionManager::InputFiles;
 std::vector<std::string> OptionManager::BuildCmd;
 std::string OptionManager::InputFile = "";
-std::string OptionManager::OutputFile = "";
 std::string OptionManager::OracleFile = "";
 std::string OptionManager::OutputDir = "chisel-out";
 bool OptionManager::Build = false;
@@ -88,10 +85,6 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
     case 'h':
       showUsage();
       exit(0);
-
-    case 'o':
-      OptionManager::OutputFile = std::string(optarg);
-      break;
 
     case 't':
       OptionManager::OutputDir = std::string(optarg);
@@ -158,7 +151,7 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
   }
 
   if (optind + 2 > argc && !OptionManager::Stat) {
-    llvm::errs() << "chisel: You must specify oracle and input.\n";
+    llvm::errs() << "chisel: You must specify the oracle and input.\n";
     llvm::errs() << usage_simple << "\n";
     llvm::errs() << error_message << "\n";
     exit(1);
@@ -167,54 +160,51 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
     exit(1);
   }
 
-  if (!OptionManager::Stat) {
-    OptionManager::OracleFile = std::string(argv[optind]);
+  int i;
+  if (Stat)
+    i = optind;
+  else
+    i = optind + 1;
 
-    if (!llvm::sys::fs::exists(OptionManager::OracleFile)) {
-      llvm::errs() << "The specified oracle file " << OptionManager::OracleFile
-                   << " does not exist.\n";
-      exit(1);
-    } else if (!llvm::sys::fs::can_execute(OptionManager::OracleFile)) {
-      llvm::errs() << "The specified oracle file " << OptionManager::OracleFile
-                   << " is not executable.\n";
-      exit(1);
-    } else if (llvm::sys::ExecuteAndWait(OptionManager::OracleFile,
-                                         {OptionManager::OracleFile})) {
-      llvm::errs() << "The specified oracle file " << OptionManager::OracleFile
-                   << " cannot execute correctly.\n";
-      exit(1);
-    }
-
+  if (Build) {
     // integrate Chisel with build system
-    if (Build) {
-      for (int i = optind + 1; i < argc; i++)
-        BuildCmd.push_back(std::string(argv[i]));
-    } else {
-      for (int i = optind + 1; i < argc; i++) {
-        std::string Input = std::string(argv[i]);
-        if (!llvm::sys::fs::exists(Input)) {
-          llvm::errs() << "The specified input file " << Input
-                       << " does not exist.\n";
-          exit(1);
-        }
-        InputFiles.push_back(Input);
-      }
-    }
-    llvm::SmallString<128> OutputDirVec(OutputDir);
-    llvm::sys::fs::make_absolute(OutputDirVec);
-    OutputDir = OutputDirVec.str();
-
-    if (OptionManager::OutputFile == "") {
-      OptionManager::OutputFile = OptionManager::InputFile + ".chisel.c";
-    }
+    // input files will be captured by IntegrationManager
+    for (; i < argc; i++)
+      BuildCmd.push_back(std::string(argv[i]));
   } else {
-    OptionManager::InputFile = std::string(argv[optind]);
-
-    if (!llvm::sys::fs::exists(OptionManager::InputFile)) {
-      llvm::errs() << "The specified input file " << OptionManager::InputFile
-                   << " does not exist."
-                   << "\n";
-      exit(1);
+    for (; i < argc; i++) {
+      std::string Input = std::string(argv[i]);
+      if (!llvm::sys::fs::exists(Input)) {
+        llvm::errs() << "The specified input file " << Input
+                     << " does not exist.\n";
+        exit(1);
+      }
+      InputFiles.push_back(Input);
     }
   }
+
+  // When Chisel only computes statistics, it does not need to check the oracle
+  if (OptionManager::Stat)
+    return;
+
+  OptionManager::OracleFile = std::string(argv[optind]);
+
+  if (!llvm::sys::fs::exists(OptionManager::OracleFile)) {
+    llvm::errs() << "The specified oracle file " << OptionManager::OracleFile
+                 << " does not exist.\n";
+    exit(1);
+  } else if (!llvm::sys::fs::can_execute(OptionManager::OracleFile)) {
+    llvm::errs() << "The specified oracle file " << OptionManager::OracleFile
+                 << " is not executable.\n";
+    exit(1);
+  } else if (llvm::sys::ExecuteAndWait(OptionManager::OracleFile,
+                                       {OptionManager::OracleFile})) {
+    llvm::errs() << "The specified oracle file " << OptionManager::OracleFile
+                 << " cannot execute correctly.\n";
+    exit(1);
+  }
+
+  llvm::SmallString<128> OutputDirVec(OutputDir);
+  llvm::sys::fs::make_absolute(OutputDirVec);
+  OutputDir = OutputDirVec.str();
 }

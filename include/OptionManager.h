@@ -11,7 +11,6 @@ public:
   static std::vector<std::string> InputFiles;
   static std::vector<std::string> BuildCmd;
   static std::string InputFile;
-  static std::string OutputFile;
   static std::string OracleFile;
   static std::string OutputDir;
   static bool Build;
