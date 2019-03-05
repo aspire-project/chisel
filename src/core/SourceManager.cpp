@@ -9,13 +9,23 @@ bool SourceManager::IsInHeader(const clang::SourceManager &SM, clang::Decl *D) {
 clang::SourceLocation
 SourceManager::FindLocationAfterCond(const clang::SourceManager &SM,
                                      clang::Expr *E) {
-  return clang::Lexer::findLocationAfterToken(
-      E->getLocEnd(), clang::tok::r_paren, SM, clang::LangOptions(), false);
+  clang::SourceLocation L = E->getLocEnd();
+  if (L.isMacroID())
+    L = SM.getFileLoc(L);
+  L = clang::Lexer::findLocationAfterToken(L, clang::tok::r_paren, SM,
+                                           clang::LangOptions(), false);
+  if (L.isMacroID())
+    L = SM.getFileLoc(L);
+  return L;
 }
 
 clang::SourceLocation
 SourceManager::GetEndOfCond(const clang::SourceManager &SM, clang::Expr *E) {
-  return FindLocationAfterCond(SM, E).getLocWithOffset(-1);
+  clang::SourceLocation L = FindLocationAfterCond(SM, E);
+  if (L.isInvalid())
+    return L;
+  else
+    return L.getLocWithOffset(-1);
 }
 
 int getOffsetUntil(const char *Buf, char Symbol) {

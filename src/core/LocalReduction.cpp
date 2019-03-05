@@ -324,7 +324,7 @@ std::vector<Stmt *> LocalReduction::getBodyStatements(CompoundStmt *CS) {
 void LocalReduction::reduceSwitch(SwitchStmt *SS) {
   const clang::SourceManager &SM = Context->getSourceManager();
   auto Body = SS->getBody();
-  SourceLocation BeginSwitch = SS->getSourceRange().getBegin();
+  SourceLocation BeginSwitch = SourceManager::GetBeginOfStmt(Context, SS);
   SourceLocation EndSwitch = SourceManager::GetEndOfStmt(Context, SS);
 
   llvm::StringRef Revert =
@@ -372,7 +372,7 @@ void LocalReduction::reduceSwitch(SwitchStmt *SS) {
 
 void LocalReduction::reduceIf(IfStmt *IS) {
   const clang::SourceManager &SM = Context->getSourceManager();
-  SourceLocation BeginIf = IS->getSourceRange().getBegin();
+  SourceLocation BeginIf = SourceManager::GetBeginOfStmt(Context, IS);
   SourceLocation EndIf = SourceManager::GetEndOfStmt(Context, IS);
   SourceLocation EndCond = SourceManager::GetEndOfCond(SM, IS->getCond());
   SourceLocation EndThen = SourceManager::GetEndOfStmt(Context, IS->getThen());
@@ -433,7 +433,7 @@ void LocalReduction::reduceIf(IfStmt *IS) {
 void LocalReduction::reduceFor(ForStmt *FS) {
   const clang::SourceManager &SM = Context->getSourceManager();
   auto Body = FS->getBody();
-  SourceLocation BeginFor = FS->getSourceRange().getBegin();
+  SourceLocation BeginFor = SourceManager::GetBeginOfStmt(Context, FS);
   SourceLocation EndFor = SourceManager::GetEndOfStmt(Context, FS);
   SourceLocation EndCond = FS->getRParenLoc();
 
@@ -461,7 +461,7 @@ void LocalReduction::reduceFor(ForStmt *FS) {
 void LocalReduction::reduceWhile(WhileStmt *WS) {
   const clang::SourceManager &SM = Context->getSourceManager();
   auto Body = WS->getBody();
-  SourceLocation BeginWhile = WS->getSourceRange().getBegin();
+  SourceLocation BeginWhile = SourceManager::GetBeginOfStmt(Context, WS);
   SourceLocation EndWhile = SourceManager::GetEndOfStmt(Context, WS);
   SourceLocation EndCond = SourceManager::GetEndOfCond(SM, WS->getCond());
 
@@ -483,7 +483,7 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
 void LocalReduction::reduceDoWhile(DoStmt *DS) {
   const clang::SourceManager &SM = Context->getSourceManager();
   auto Body = DS->getBody();
-  SourceLocation BeginDo = DS->getSourceRange().getBegin();
+  SourceLocation BeginDo = SourceManager::GetBeginOfStmt(Context, DS);
   SourceLocation EndDo = SourceManager::GetEndOfStmt(Context, DS);
   SourceLocation EndCond = SourceManager::GetEndOfCond(SM, DS->getCond());
 
