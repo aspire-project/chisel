@@ -420,7 +420,7 @@ void LocalReduction::reduceIf(IfStmt *IS) {
     removeSourceText(BeginIf, EndCond);
     TheRewriter.overwriteChangedFiles();
     if (callOracle()) {
-      auto Children = getAllChildren({IS->getCond()});
+      auto Children = getAllChildren(IS->getCond());
       RemovedElements.insert(Children.begin(), Children.end());
     } else {
       TheRewriter.ReplaceText(SourceRange(BeginIf, EndIf), RevertIf);
@@ -471,7 +471,7 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
   removeSourceText(BeginWhile, EndCond);
   TheRewriter.overwriteChangedFiles();
   if (callOracle()) {
-    auto Children = getAllChildren({WS->getCond()});
+    auto Children = getAllChildren(WS->getCond());
     RemovedElements.insert(Children.begin(), Children.end());
   } else {
     TheRewriter.ReplaceText(SourceRange(BeginWhile, EndWhile), Revert);
@@ -493,7 +493,7 @@ void LocalReduction::reduceDoWhile(DoStmt *DS) {
   removeSourceText(DS->getWhileLoc(), EndDo);
   TheRewriter.overwriteChangedFiles();
   if (callOracle()) {
-    auto Children = getAllChildren({DS->getCond()});
+    auto Children = getAllChildren(DS->getCond());
     RemovedElements.insert(Children.begin(), Children.end());
   } else {
     TheRewriter.ReplaceText(SourceRange(BeginDo, EndDo), Revert);
