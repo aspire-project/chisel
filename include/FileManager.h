@@ -12,6 +12,7 @@ public:
   static FileManager *GetInstance();
   static std::string Readlink(std::string &Name);
   static std::string Dirname(std::string &Name);
+  static std::string Basename(std::string &Name);
 
   std::string getTempFileName(std::string Suffix);
   void saveTemp(std::string Phase, bool Status);

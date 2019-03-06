@@ -21,8 +21,9 @@ FileManager *FileManager::GetInstance() {
 }
 
 std::string FileManager::getTempFileName(std::string Suffix) {
-  std::string Name = OptionManager::OutputDir + "/" + OptionManager::InputFile +
-                     "." + std::to_string(TempCounter) + "." + Suffix;
+  std::string Name = OptionManager::OutputDir + "/" +
+                     Basename(OptionManager::InputFile) + "." +
+                     std::to_string(TempCounter) + "." + Suffix;
   TempCounter++;
   return Name;
 }
@@ -56,6 +57,14 @@ std::string FileManager::Dirname(std::string &Name) {
   std::string Dir(Cstr);
   delete[] Cstr;
   return Dir;
+}
+
+std::string FileManager::Basename(std::string &Name) {
+  int Idx = Name.rfind('/', Name.length());
+  if (Idx != std::string::npos) {
+    return (Name.substr(Idx + 1, Name.length() - Idx));
+  }
+  return ("");
 }
 
 void FileManager::Finalize() {
