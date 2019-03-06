@@ -52,7 +52,9 @@ bool LocalReduction::HandleTopLevelDecl(DeclGroupRef D) {
 
 void LocalReduction::HandleTranslationUnit(clang::ASTContext &Ctx) {
   for (auto const &FD : Functions) {
-    spdlog::get("Logger")->info("Reduce {}", FD->getNameInfo().getAsString());
+    spdlog::get("Logger")->info("Reduce {} at {}",
+                                FD->getNameInfo().getAsString(),
+                                OptionManager::InputFile);
     Queue.push(FD->getBody());
 
     CurrentFunction = FD;
@@ -327,6 +329,13 @@ void LocalReduction::reduceSwitch(SwitchStmt *SS) {
   SourceLocation BeginSwitch = SourceManager::GetBeginOfStmt(Context, SS);
   SourceLocation EndSwitch = SourceManager::GetEndOfStmt(Context, SS);
 
+  if (BeginSwitch.isInvalid() || EndSwitch.isInvalid()) {
+    spdlog::get("Logger")->warn(
+        "Invalid location:\nBeginSwitch: {}\nEndSwitch: {}",
+        BeginSwitch.printToString(SM), EndSwitch.printToString(SM));
+    return;
+  }
+
   llvm::StringRef Revert =
       SourceManager::GetSourceText(SM, BeginSwitch, EndSwitch);
 
@@ -378,8 +387,13 @@ void LocalReduction::reduceIf(IfStmt *IS) {
   SourceLocation EndThen = SourceManager::GetEndOfStmt(Context, IS->getThen());
 
   if (BeginIf.isInvalid() || EndIf.isInvalid() || EndCond.isInvalid() ||
-      EndThen.isInvalid())
+      EndThen.isInvalid()) {
+    spdlog::get("Logger")->warn(
+        "Invalid location:\nBeginIf: {}\nEndIf: {}\nEndCond: {}\nEndThen: {}",
+        BeginIf.printToString(SM), EndIf.printToString(SM),
+        EndCond.printToString(SM), EndThen.printToString(SM));
     return;
+  }
 
   llvm::StringRef RevertIf = SourceManager::GetSourceText(SM, BeginIf, EndIf);
 
@@ -437,6 +451,14 @@ void LocalReduction::reduceFor(ForStmt *FS) {
   SourceLocation EndFor = SourceManager::GetEndOfStmt(Context, FS);
   SourceLocation EndCond = FS->getRParenLoc();
 
+  if (BeginFor.isInvalid() || EndFor.isInvalid() || EndCond.isInvalid()) {
+    spdlog::get("Logger")->warn(
+        "Invalid location:\nBeginFor: {}\nEndFor: {}\nEndCond: {}",
+        BeginFor.printToString(SM), EndFor.printToString(SM),
+        EndCond.printToString(SM));
+    return;
+  }
+
   llvm::StringRef Revert = SourceManager::GetSourceText(SM, BeginFor, EndFor);
 
   removeSourceText(BeginFor, EndCond);
@@ -465,6 +487,15 @@ void LocalReduction::reduceWhile(WhileStmt *WS) {
   SourceLocation EndWhile = SourceManager::GetEndOfStmt(Context, WS);
   SourceLocation EndCond = SourceManager::GetEndOfCond(SM, WS->getCond());
 
+  if (BeginWhile.isInvalid() || EndWhile.isInvalid() || EndCond.isInvalid()) {
+    spdlog::get("Logger")->warn("Invalid location:\nBeginWhile: {}\nEndWhile: "
+                                "{}\nEndCond: {}",
+                                BeginWhile.printToString(SM),
+                                EndWhile.printToString(SM),
+                                EndCond.printToString(SM));
+    return;
+  }
+
   llvm::StringRef Revert =
       SourceManager::GetSourceText(SM, BeginWhile, EndWhile);
 
@@ -486,6 +517,15 @@ void LocalReduction::reduceDoWhile(DoStmt *DS) {
   SourceLocation BeginDo = SourceManager::GetBeginOfStmt(Context, DS);
   SourceLocation EndDo = SourceManager::GetEndOfStmt(Context, DS);
   SourceLocation EndCond = SourceManager::GetEndOfCond(SM, DS->getCond());
+
+  if (BeginDo.isInvalid() || EndDo.isInvalid() || EndCond.isInvalid()) {
+    spdlog::get("Logger")->warn("Invalid location:\nBeginDo: {}\nEndDo: "
+                                "{}\nEndCond: {}",
+                                BeginDo.printToString(SM),
+                                EndDo.printToString(SM),
+                                EndCond.printToString(SM));
+    return;
+  }
 
   llvm::StringRef Revert = SourceManager::GetSourceText(SM, BeginDo, EndDo);
 
