@@ -6,7 +6,7 @@ OUTPUT=$CHISEL_OUTPUT_DIR/"capture.txt"
 
 printf "%s" $NAME >>$OUTPUT
 for arg in "$@"; do
-  if [[ $arg == *.c ]]; then # TODO cpp
+  if [[ $arg == *.c || $arg == *.cpp ]]; then
     arg=$(realpath $arg)
   fi
   printf ",%s" $arg >>$OUTPUT

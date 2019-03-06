@@ -172,6 +172,12 @@ add_test(
 )
 
 add_test(
+  NAME macro1
+  COMMAND ./test.sh macro1 --build -- gcc -DMACRO=0
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)
+
+add_test(
   NAME integration0
   COMMAND ./test.sh integration0 integration0.c subfile0.c subfile1.c
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"

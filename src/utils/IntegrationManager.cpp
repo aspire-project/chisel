@@ -157,7 +157,7 @@ IntegrationManager::getCC1Args(std::string &FileName) {
   std::vector<const char *> Args;
   bool Record = false;
   for (auto &Arg : CompilationDB[FileName]) {
-    if (Arg.find("-I") == 0) {
+    if (Arg.find("-I") == 0 || Arg.find("-D") == 0) {
       Args.push_back(Arg.c_str());
       Record = true;
     } else if (Arg.find("-") == 0) {
