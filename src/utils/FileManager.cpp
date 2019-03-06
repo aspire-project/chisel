@@ -64,7 +64,7 @@ std::string FileManager::Basename(std::string &Name) {
   if (Idx != std::string::npos) {
     return (Name.substr(Idx + 1, Name.length() - Idx));
   }
-  return ("");
+  return Name;
 }
 
 void FileManager::Finalize() {
