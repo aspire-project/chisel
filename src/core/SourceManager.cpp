@@ -79,6 +79,16 @@ clang::SourceLocation SourceManager::GetEndLocation(clang::ASTContext *Context,
   return End;
 }
 
+clang::SourceLocation
+SourceManager::GetRealLocation(clang::ASTContext *Context,
+                               clang::SourceLocation Loc) {
+  const clang::SourceManager &SM = Context->getSourceManager();
+  if (Loc.isMacroID())
+    return SM.getFileLoc(Loc);
+  else
+    return Loc;
+}
+
 clang::SourceLocation SourceManager::GetBeginOfStmt(clang::ASTContext *Context,
                                                     clang::Stmt *S) {
   const clang::SourceManager &SM = Context->getSourceManager();
@@ -126,6 +136,8 @@ clang::SourceLocation SourceManager::GetEndOfStmt(clang::ASTContext *Context,
     return GetEndOfStmt(Context, LS->getSubStmt());
   if (clang::ParenExpr *PE = llvm::dyn_cast<clang::ParenExpr>(S))
     return GetEndLocationUntil(SM, PE->getSourceRange(), ';');
+  if (clang::SwitchCase *SC = llvm::dyn_cast<clang::SwitchCase>(S))
+    return GetEndLocationUntil(SM, SC->getSourceRange(), ';');
   return S->getSourceRange().getEnd();
 }
 

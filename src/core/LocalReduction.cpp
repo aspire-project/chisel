@@ -336,45 +336,32 @@ void LocalReduction::reduceSwitch(SwitchStmt *SS) {
     return;
   }
 
-  llvm::StringRef Revert =
-      SourceManager::GetSourceText(SM, BeginSwitch, EndSwitch);
-
   std::vector<clang::SwitchCase *> Cases;
   for (clang::SwitchCase *SC = SS->getSwitchCaseList(); SC != NULL;
        SC = SC->getNextSwitchCase()) {
-    if (clang::CaseStmt *Case = llvm::dyn_cast<clang::CaseStmt>(SC))
-      Cases.insert(Cases.begin(), Case);
-    if (clang::DefaultStmt *Case = llvm::dyn_cast<clang::DefaultStmt>(SC))
-      Cases.insert(Cases.begin(), Case);
+    Cases.insert(Cases.begin(), SC);
   }
-
-  SourceLocation InitialPoint = Cases.front()->getKeywordLoc();
-  int SelectedCase = -1;
   for (int I = 0; I < Cases.size(); I++) {
-    SourceLocation CurrPoint = Cases[I]->getKeywordLoc().getLocWithOffset(-1);
-    removeSourceText(InitialPoint, CurrPoint);
-    if (I != Cases.size() - 1) {
-      SourceLocation NextPoint = Cases[I + 1]->getKeywordLoc();
-      removeSourceText(NextPoint, EndSwitch.getLocWithOffset(-1));
+    SourceLocation CurrLoc =
+        SourceManager::GetRealLocation(Context, Cases[I]->getKeywordLoc());
+    SourceLocation NextLoc;
+    if (I < Cases.size() - 1) {
+      NextLoc =
+          SourceManager::GetRealLocation(Context, Cases[I + 1]->getKeywordLoc())
+              .getLocWithOffset(-1);
+    } else {
+      NextLoc = EndSwitch.getLocWithOffset(-1);
     }
+    llvm::StringRef Revert = SourceManager::GetSourceText(SM, CurrLoc, NextLoc);
+    removeSourceText(CurrLoc, NextLoc);
     TheRewriter.overwriteChangedFiles();
     if (callOracle()) {
-      Queue.push(Cases[I]);
-      SelectedCase = I;
-      break;
-    } else {
-      TheRewriter.ReplaceText(SourceRange(BeginSwitch, EndSwitch), Revert);
-      TheRewriter.overwriteChangedFiles();
-      Queue.push(Body);
-    }
-  }
-  std::set<clang::Stmt *> RemovedStmts;
-  if (SelectedCase != -1) {
-    for (int I = 0; I < Cases.size(); I++) {
-      if (I == SelectedCase)
-        continue;
       auto TempChildren = getAllChildren(Cases[I]);
       RemovedElements.insert(TempChildren.begin(), TempChildren.end());
+    } else {
+      TheRewriter.ReplaceText(SourceRange(CurrLoc, NextLoc), Revert);
+      TheRewriter.overwriteChangedFiles();
+      Queue.push(Cases[I]);
     }
   }
 }

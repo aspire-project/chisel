@@ -123,6 +123,13 @@ add_test(
   COMMAND ./test.sh switch2 switch2.c
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
 )
+
+add_test(
+  NAME switch3
+  COMMAND ./test.sh switch3 switch3.c
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)
+
 add_test(
   NAME function0
   COMMAND ./test.sh function0 function0.c

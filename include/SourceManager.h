@@ -11,6 +11,8 @@ public:
   static int GetStartingColumn(clang::SourceManager &SM, int Line);
   static clang::SourceLocation
   FindLocationAfterCond(const clang::SourceManager &SM, clang::Expr *E);
+  static clang::SourceLocation GetRealLocation(clang::ASTContext *Context,
+                                               clang::SourceLocation Loc);
   static clang::SourceLocation GetEndOfCond(const clang::SourceManager &SM,
                                             clang::Expr *E);
   static clang::SourceLocation GetBeginOfStmt(clang::ASTContext *Context,
