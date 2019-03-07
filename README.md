@@ -1,11 +1,5 @@
 # Chisel [![CircleCI](https://circleci.com/gh/aspire-project/chisel.svg?style=svg)](https://circleci.com/gh/aspire-project/chisel)
 
-## Requirements
-* CMake >= 3.11
-* Clang and LibClang >= 7.0
-* mlpack >= 2.0
-* spdlog
-
 ## Installation
 ### Installing Dependencies
 See [INSTALL.md](INSTALL.md).
