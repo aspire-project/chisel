@@ -3,7 +3,7 @@ version: 2
 jobs:
   build_debian:
     docker:
-      - image: debian:sid
+      - image: debian:buster
     steps:
       - checkout
       - run: apt-get update
