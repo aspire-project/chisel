@@ -1,7 +1,7 @@
-FROM debian:sid 
+FROM debian:buster
 
-RUN apt-get update && apt-get install -y sudo
-RUN sudo apt-get install -y libmlpack-dev \
+RUN apt-get update
+RUN apt-get install -y libmlpack-dev \
     clang libclang-dev llvm-dev llvm cmake git \
     libspdlog-dev nlohmann-json-dev
 
