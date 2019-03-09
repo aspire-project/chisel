@@ -89,6 +89,12 @@ add_test(
 )
 
 add_test(
+  NAME for3
+  COMMAND ./test.sh for3 for3.c
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"
+)
+
+add_test(
   NAME do-while0
   COMMAND ./test.sh do-while0 do-while0.c
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/test"

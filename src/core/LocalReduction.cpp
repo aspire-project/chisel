@@ -451,7 +451,9 @@ void LocalReduction::reduceFor(ForStmt *FS) {
   removeSourceText(BeginFor, EndCond);
   TheRewriter.overwriteChangedFiles();
   if (callOracle()) {
-    std::vector<Stmt *> ForVec = {FS->getCond()};
+    std::vector<Stmt *> ForVec;
+    if (FS->getCond())
+      ForVec.emplace_back(FS->getCond());
     if (FS->getInit())
       ForVec.emplace_back(FS->getInit());
     if (FS->getInc())
