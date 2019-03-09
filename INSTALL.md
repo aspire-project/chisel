@@ -6,7 +6,7 @@
 * spdlog >= 1.3.1
 
 You can install the requirements with the following commands.
-Make sure that your package manager install the correct versions.
+Make sure that your package manager installs the correct versions.
 ## Linux
 ```sh
 $ apt-get install clang libclang-dev llvm-dev cmake libspdlog-dev libmlpack-dev
