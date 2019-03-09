@@ -155,8 +155,11 @@ bool DCEFrontend::Parse(std::string &InputFile, ClangDeadcodeElimination *R) {
 
   for (clang::TextDiagnosticBuffer::const_iterator DiagnosticIterator =
            TextDiagBuffer->warn_begin();
-       DiagnosticIterator != TextDiagBuffer->warn_end(); ++DiagnosticIterator)
-    R->UnusedLocations.emplace_back(DiagnosticIterator->first);
+       DiagnosticIterator != TextDiagBuffer->warn_end(); ++DiagnosticIterator) {
+    if (DiagnosticIterator->second.find("unused variable") == 0 ||
+        DiagnosticIterator->second.find("unused label") == 0)
+      R->UnusedLocations.emplace_back(DiagnosticIterator->first);
+  }
   R->removeUnusedElements();
   CI->getDiagnosticClient().EndSourceFile();
   return true;
