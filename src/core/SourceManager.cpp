@@ -9,7 +9,7 @@ bool SourceManager::IsInHeader(const clang::SourceManager &SM, clang::Decl *D) {
 clang::SourceLocation
 SourceManager::FindLocationAfterCond(const clang::SourceManager &SM,
                                      clang::Expr *E) {
-  clang::SourceLocation L = E->getLocEnd();
+  clang::SourceLocation L = E->getEndLoc();
   if (L.isMacroID())
     L = SM.getFileLoc(L);
   L = clang::Lexer::findLocationAfterToken(L, clang::tok::r_paren, SM,

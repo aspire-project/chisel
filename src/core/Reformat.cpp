@@ -11,8 +11,8 @@ void Reformat::Initialize(clang::ASTContext &Ctx) {
 
 std::vector<clang::tooling::Range>
 Reformat::createRanges(llvm::MemoryBuffer *Code) {
-  llvm::IntrusiveRefCntPtr<clang::vfs::InMemoryFileSystem> InMemoryFileSystem(
-      new clang::vfs::InMemoryFileSystem);
+  llvm::IntrusiveRefCntPtr<llvm::vfs::InMemoryFileSystem> InMemoryFileSystem(
+      new llvm::vfs::InMemoryFileSystem);
   clang::FileManager Files(clang::FileSystemOptions(), InMemoryFileSystem);
   clang::SourceManager *SM = &Context->getSourceManager();
   InMemoryFileSystem.get()->addFileNoOwn("temp", 0, Code);
