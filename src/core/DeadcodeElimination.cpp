@@ -49,10 +49,11 @@ ClangDeadcodeElimination::getRemoveRange(clang::SourceLocation Loc) {
     if (clang::VarDecl *VD = llvm::dyn_cast<clang::VarDecl>(Entry.first)) {
       if (VD->hasInit()) {
         if (isConstant(VD->getInit()))
-          End =
-              SourceManager::GetEndLocationUntil(SM, VD->getSourceRange(), ';');
+          End = SourceManager::GetEndLocationUntil(SM, VD->getEndLoc(),
+                                                   clang::tok::semi);
       } else
-        End = SourceManager::GetEndLocationUntil(SM, VD->getSourceRange(), ';');
+        End = SourceManager::GetEndLocationUntil(SM, VD->getEndLoc(),
+                                                 clang::tok::semi);
     } else if (clang::LabelDecl *LD =
                    llvm::dyn_cast<clang::LabelDecl>(Entry.first))
       End = LD->getStmt()->getSubStmt()->getBeginLoc().getLocWithOffset(-1);

@@ -1,4 +1,4 @@
-#define FUNCTION_CALL f();
+#define FUNCTION_CALL f()
 #define X_EQUAL x =
 #define ONE 1
 #define FUNCTION_DEF                                                           \

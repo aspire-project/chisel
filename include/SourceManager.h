@@ -25,8 +25,9 @@ public:
   GetEndLocationAfter(const clang::SourceManager &SM, clang::SourceRange Range,
                       char Symbol);
   static clang::SourceLocation
-  GetEndLocationUntil(const clang::SourceManager &SM, clang::SourceRange Range,
-                      char Symbol);
+  GetEndLocationUntil(const clang::SourceManager &SM,
+                      clang::SourceLocation EndLoc,
+                      clang::tok::TokenKind Symbol);
   static clang::SourceLocation
   GetEndLocationFromBegin(const clang::SourceManager &SM,
                           clang::SourceRange Range);

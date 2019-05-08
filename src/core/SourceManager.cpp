@@ -46,8 +46,16 @@ int SourceManager::GetStartingColumn(clang::SourceManager &SM, int Line) {
 
 clang::SourceLocation
 SourceManager::GetEndLocationUntil(const clang::SourceManager &SM,
-                                   clang::SourceRange Range, char Symbol) {
-  clang::SourceLocation EndLoc = Range.getEnd();
+                                   clang::SourceLocation EndLoc,
+                                   clang::tok::TokenKind Symbol) {
+  if (EndLoc.isMacroID())
+    EndLoc = SM.getFileLoc(EndLoc);
+
+  if (EndLoc.isInvalid())
+    return EndLoc;
+
+  EndLoc = clang::Lexer::findLocationAfterToken(EndLoc, Symbol, SM,
+                                                clang::LangOptions(), false);
 
   if (EndLoc.isMacroID())
     EndLoc = SM.getFileLoc(EndLoc);
@@ -55,9 +63,7 @@ SourceManager::GetEndLocationUntil(const clang::SourceManager &SM,
   if (EndLoc.isInvalid())
     return EndLoc;
 
-  const char *EndBuf = SM.getCharacterData(EndLoc);
-  int Offset = getOffsetUntil(EndBuf, Symbol);
-  return EndLoc.getLocWithOffset(Offset);
+  return EndLoc.getLocWithOffset(-1);
 }
 
 clang::SourceLocation SourceManager::GetEndLocation(clang::ASTContext *Context,
@@ -74,7 +80,7 @@ clang::SourceLocation SourceManager::GetEndLocation(clang::ASTContext *Context,
       Tok.getKind() == clang::tok::r_brace) {
     End = Loc;
   } else {
-    End = GetEndLocationUntil(SM, Loc, ';');
+    End = GetEndLocationUntil(SM, Loc, clang::tok::semi);
   }
   return End;
 }
@@ -107,38 +113,43 @@ clang::SourceLocation SourceManager::GetEndOfStmt(clang::ASTContext *Context,
   if (clang::CompoundStmt *CS = llvm::dyn_cast<clang::CompoundStmt>(S))
     return CS->getRBracLoc();
   if (clang::IfStmt *IS = llvm::dyn_cast<clang::IfStmt>(S))
-    return GetEndLocation(Context, IS->getSourceRange().getEnd());
+    return GetEndLocation(Context, IS->getEndLoc());
   if (clang::WhileStmt *WS = llvm::dyn_cast<clang::WhileStmt>(S))
     return GetEndOfStmt(Context, WS->getBody());
   if (clang::DoStmt *DS = llvm::dyn_cast<clang::DoStmt>(S))
-    return GetEndLocationUntil(SM, DS->getCond()->getSourceRange(), ';');
+    return GetEndLocationUntil(SM, DS->getRParenLoc(), clang::tok::semi);
   if (clang::ForStmt *FS = llvm::dyn_cast<clang::ForStmt>(S))
     return GetEndOfStmt(Context, FS->getBody());
   if (clang::SwitchStmt *SS = llvm::dyn_cast<clang::SwitchStmt>(S))
     return GetEndOfStmt(Context, SS->getBody());
   if (clang::BinaryOperator *BO = llvm::dyn_cast<clang::BinaryOperator>(S))
-    return GetEndLocationUntil(SM, BO->getSourceRange(), ';');
+    return GetEndLocationUntil(SM, BO->getEndLoc(), clang::tok::semi);
   if (clang::ReturnStmt *RS = llvm::dyn_cast<clang::ReturnStmt>(S))
-    return GetEndLocationUntil(SM, RS->getSourceRange(), ';');
+    return GetEndLocationUntil(SM, RS->getEndLoc(), clang::tok::semi);
   if (clang::GotoStmt *GS = llvm::dyn_cast<clang::GotoStmt>(S))
-    return GetEndLocationUntil(SM, GS->getSourceRange(), ';');
+    return GetEndLocationUntil(SM, GS->getEndLoc(), clang::tok::semi);
   if (clang::BreakStmt *BS = llvm::dyn_cast<clang::BreakStmt>(S))
-    return GetEndLocationUntil(SM, BS->getSourceRange(), ';');
+    return GetEndLocationUntil(SM, BS->getEndLoc(), clang::tok::semi);
   if (clang::ContinueStmt *CS = llvm::dyn_cast<clang::ContinueStmt>(S))
-    return GetEndLocationUntil(SM, CS->getSourceRange(), ';');
+    return GetEndLocationUntil(SM, CS->getEndLoc(), clang::tok::semi);
   if (clang::DeclStmt *DS = llvm::dyn_cast<clang::DeclStmt>(S))
-    return DS->getSourceRange().getEnd();
+    return DS->getEndLoc();
   if (clang::CallExpr *CE = llvm::dyn_cast<clang::CallExpr>(S))
-    return GetEndLocationUntil(SM, CE->getSourceRange(), ';');
+    return GetEndLocationUntil(SM, CE->getEndLoc(), clang::tok::semi);
   if (clang::UnaryOperator *UO = llvm::dyn_cast<clang::UnaryOperator>(S))
-    return GetEndLocationUntil(SM, UO->getSourceRange(), ';');
+    return GetEndLocationUntil(SM, UO->getEndLoc(), clang::tok::semi);
   if (clang::LabelStmt *LS = llvm::dyn_cast<clang::LabelStmt>(S))
     return GetEndOfStmt(Context, LS->getSubStmt());
   if (clang::ParenExpr *PE = llvm::dyn_cast<clang::ParenExpr>(S))
-    return GetEndLocationUntil(SM, PE->getSourceRange(), ';');
+    return GetEndLocationUntil(SM, PE->getEndLoc(), clang::tok::semi);
   if (clang::SwitchCase *SC = llvm::dyn_cast<clang::SwitchCase>(S))
-    return GetEndLocationUntil(SM, SC->getSourceRange(), ';');
-  return S->getSourceRange().getEnd();
+    return GetEndLocationUntil(SM, SC->getEndLoc(), clang::tok::semi);
+  if (clang::CastExpr *CE = llvm::dyn_cast<clang::CastExpr>(S))
+    return GetEndOfStmt(Context, CE->getSubExpr());
+  if (clang::GCCAsmStmt *AS = llvm::dyn_cast<clang::GCCAsmStmt>(S))
+    return GetEndLocationUntil(SM, AS->getEndLoc(), clang::tok::semi);
+
+  return S->getEndLoc();
 }
 
 llvm::StringRef SourceManager::GetSourceText(const clang::SourceManager &SM,

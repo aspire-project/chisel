@@ -64,7 +64,8 @@ bool GlobalReduction::test(DDElementVector &ToBeRemoved) {
     } else if (clang::EmptyDecl *ED = llvm::dyn_cast<clang::EmptyDecl>(D)) {
       End = ED->getSourceRange().getEnd();
     } else {
-      End = SourceManager::GetEndLocationUntil(SM, D->getSourceRange(), ';');
+      End = SourceManager::GetEndLocationUntil(SM, D->getEndLoc(),
+                                               clang::tok::semi);
     }
 
     if (Start.isMacroID())
