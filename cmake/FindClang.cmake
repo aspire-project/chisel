@@ -1,15 +1,15 @@
 if (NOT LLVM_INCLUDE_DIR OR NOT LLVM_LIB_DIR)
   message(FATAL_ERROR "No LLVM and Clang support requires LLVM")
 else (NOT LLVM_INCLUDE_DIR OR NOT LLVM_LIB_DIR)
+  set(CLANG_INCLUDE_DIRS ${CLANG_INCLUDE_DIRS} ${LLVM_INCLUDE_DIR})
+  set(CLANG_INCLUDE_DIRS ${CLANG_INCLUDE_DIRS} ${CLANG_INCLUDE_DIR})
+
   MACRO(FIND_AND_ADD_CLANG_LIB _libname_)
     find_library(CLANG_${_libname_}_LIB ${_libname_} ${LLVM_LIB_DIR} ${CLANG_LIB_DIR})
     if (CLANG_${_libname_}_LIB)
       set(CLANG_LIBS ${CLANG_LIBS} ${CLANG_${_libname_}_LIB})
     endif(CLANG_${_libname_}_LIB)
   ENDMACRO(FIND_AND_ADD_CLANG_LIB)
-
-  set(CLANG_INCLUDE_DIRS ${CLANG_INCLUDE_DIRS} ${LLVM_INCLUDE_DIR})
-  set(CLANG_INCLUDE_DIRS ${CLANG_INCLUDE_DIRS} ${CLANG_INCLUDE_DIR})
 
   FIND_AND_ADD_CLANG_LIB(clangFormat)
   FIND_AND_ADD_CLANG_LIB(clangFrontend)
@@ -34,14 +34,14 @@ else (NOT LLVM_INCLUDE_DIR OR NOT LLVM_LIB_DIR)
   FIND_AND_ADD_CLANG_LIB(clangToolingCore)
   FIND_AND_ADD_CLANG_LIB(clangToolingInclusions)
 
-  MESSAGE(STATUS "Clang libs: " ${CLANG_LIBS})
-
   if(CLANG_LIBS)
     set(CLANG_FOUND TRUE)
   endif(CLANG_LIBS)
 
+  MESSAGE(STATUS "Clang libs: " ${CLANG_LIBS})
+
   if(CLANG_FOUND)
-    message(STATUS "Found Clang: ${CLANG_INCLUDE_DIRS}")
+    message(STATUS "Found Clang")
   else(CLANG_FOUND)
     if(CLANG_FIND_REQUIRED)
       message(FATAL_ERROR "Could NOT find Clang")
