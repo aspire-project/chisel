@@ -16,10 +16,8 @@ bool Frontend::Parse(std::string &InputFile, clang::ASTConsumer *R) {
   clang::CompilerInvocation &Invocation = CI->getInvocation();
   std::vector<const char *> Args =
       IntegrationManager::GetInstance()->getCC1Args(InputFile);
-  if (Args.size() > 0) {
-    clang::CompilerInvocation::CreateFromArgs(
-        Invocation, &Args[0], &Args[0] + Args.size(), CI->getDiagnostics());
-  }
+  clang::CompilerInvocation::CreateFromArgs(
+      Invocation, &Args[0], &Args[0] + Args.size(), CI->getDiagnostics());
   clang::TargetInfo *Target = clang::TargetInfo::CreateTargetInfo(
       CI->getDiagnostics(), CI->getInvocation().TargetOpts);
   CI->setTarget(Target);
