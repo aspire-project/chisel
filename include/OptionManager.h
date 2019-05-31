@@ -4,7 +4,8 @@
 #include <string>
 #include <vector>
 
-/// \brief Manages and processes all the command-line options that are passed to Chisel
+/// \brief Manages and processes all the command-line options that are passed to
+/// Chisel
 class OptionManager {
 public:
   static std::string BinFile;
@@ -26,6 +27,7 @@ public:
   static bool Profile;
   static bool Debug;
   static bool Stat;
+  static bool XRef;
 
   static void showUsage();
   static void handleOptions(int argc, char *argv[]);

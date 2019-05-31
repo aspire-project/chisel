@@ -43,6 +43,7 @@ add_executable(chisel
   src/utils/Report.cpp
   src/utils/Profiler.cpp
   src/utils/StatsManager.cpp
+  src/xref/Visualization.cpp
 )
 
 add_custom_target(lib ALL

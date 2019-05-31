@@ -16,6 +16,7 @@
 #include "Reformat.h"
 #include "Report.h"
 #include "StatsManager.h"
+#include "Visualization.h"
 
 void initialize() {
   FileManager::Initialize();
@@ -96,6 +97,13 @@ int main(int argc, char *argv[]) {
 
   if (OptionManager::Stat) {
     StatsManager::Print();
+    return 0;
+  }
+
+  if (OptionManager::XRef) {
+    Visualization visualization;
+    for (auto &File : OptionManager::InputFiles)
+      visualization.generate(File);
     return 0;
   }
 

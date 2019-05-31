@@ -32,7 +32,8 @@ void OptionManager::showUsage() {
          "analysis\n"
       << "  --no_profile           Do not print profiling report\n"
       << "  --debug                Print debug information\n"
-      << "  --stat                 Count the number of statements\n";
+      << "  --stat                 Count the number of statements\n"
+      << "  --xref                 Visualize the results only\n";
 }
 
 static struct option long_options[] = {
@@ -51,9 +52,10 @@ static struct option long_options[] = {
     {"no_profile", no_argument, 0, 'p'},
     {"debug", no_argument, 0, 'v'},
     {"stat", no_argument, 0, 'S'},
+    {"xref", no_argument, 0, 'X'},
     {0, 0, 0, 0}};
 
-static const char *optstring = "ho:t:sDdglcLGCpvS";
+static const char *optstring = "ho:t:sDdglcLGCpvSX";
 
 std::string OptionManager::BinFile = "";
 std::vector<std::string> OptionManager::InputFiles;
@@ -74,6 +76,7 @@ bool OptionManager::SkipDCE = false;
 bool OptionManager::Profile = true;
 bool OptionManager::Debug = false;
 bool OptionManager::Stat = false;
+bool OptionManager::XRef = false;
 
 void OptionManager::handleOptions(int argc, char *argv[]) {
   llvm::ErrorOr<std::string> Program = llvm::sys::findProgramByName(argv[0]);
@@ -140,6 +143,10 @@ void OptionManager::handleOptions(int argc, char *argv[]) {
 
     case 'S':
       OptionManager::Stat = true;
+      break;
+
+    case 'X':
+      OptionManager::XRef = true;
       break;
 
     default:
