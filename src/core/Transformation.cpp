@@ -2,9 +2,17 @@
 
 #include "SourceManager.h"
 
+#include "OptionManager.h"
+
+#include "Profiler.h"
+
 #include <queue>
 
+#include "llvm/Support/Program.h"
+
 #include "clang/Lex/Lexer.h"
+
+#include <ctype.h>
 
 void Transformation::Initialize(clang::ASTContext &C) {
   Context = &C;
@@ -41,4 +49,19 @@ void Transformation::removeSourceText(const clang::SourceLocation &B,
       Replacement += chr;
   }
   TheRewriter.ReplaceText(clang::SourceRange(B, E), Replacement);
+}
+
+bool Transformation::callOracle() {
+  Profiler::GetInstance()->beginOracle();
+  int Status = llvm::sys::ExecuteAndWait(OptionManager::OracleFile,
+                                         {OptionManager::OracleFile});
+  Profiler::GetInstance()->endOracle();
+  return (Status == 0);
+}
+
+void Transformation::revertRemoval(const std::vector<clang::SourceRange> &Ranges, const std::vector<llvm::StringRef> &Reverts){
+  for (int i = 0; i < Reverts.size(); i++)
+    TheRewriter.ReplaceText(Ranges[i], Reverts[i]);
+  TheRewriter.overwriteChangedFiles();
+  return ;
 }
