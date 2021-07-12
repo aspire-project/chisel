@@ -43,7 +43,7 @@ void Transformation::removeSourceText(const clang::SourceLocation &B,
   for (auto const &chr : Text) {
     if (chr == '\n')
       Replacement += '\n';
-    else if (isprint(chr))
+    else if (isprint(chr) || !isascii(chr))
       Replacement += " ";
     else
       Replacement += chr;
